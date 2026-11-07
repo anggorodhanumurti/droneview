@@ -1,0 +1,8 @@
+{
+    global:
+        JNI_OnLoad;
+        dv_start;
+        dv_stop;
+    local:
+        *;
+};

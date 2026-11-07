@@ -1,0 +1,38 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/droneview.dir/link.d"
+  "CMakeFiles/droneview.dir/src/app/core/symbol_resolver.cpp.o"
+  "CMakeFiles/droneview.dir/src/app/core/symbol_resolver.cpp.o.d"
+  "CMakeFiles/droneview.dir/src/app/core/target_symbols.cpp.o"
+  "CMakeFiles/droneview.dir/src/app/core/target_symbols.cpp.o.d"
+  "CMakeFiles/droneview.dir/src/app/elf/elf_module.cpp.o"
+  "CMakeFiles/droneview.dir/src/app/elf/elf_module.cpp.o.d"
+  "CMakeFiles/droneview.dir/src/app/hooks/hook_engine.cpp.o"
+  "CMakeFiles/droneview.dir/src/app/hooks/hook_engine.cpp.o.d"
+  "CMakeFiles/droneview.dir/src/app/il2cpp/il2cpp_api.cpp.o"
+  "CMakeFiles/droneview.dir/src/app/il2cpp/il2cpp_api.cpp.o.d"
+  "CMakeFiles/droneview.dir/src/app/il2cpp/il2cpp_helpers.cpp.o"
+  "CMakeFiles/droneview.dir/src/app/il2cpp/il2cpp_helpers.cpp.o.d"
+  "CMakeFiles/droneview.dir/src/app/platform/platform_android.cpp.o"
+  "CMakeFiles/droneview.dir/src/app/platform/platform_android.cpp.o.d"
+  "CMakeFiles/droneview.dir/src/backend/drone_backend.cpp.o"
+  "CMakeFiles/droneview.dir/src/backend/drone_backend.cpp.o.d"
+  "CMakeFiles/droneview.dir/src/backend/entry.cpp.o"
+  "CMakeFiles/droneview.dir/src/backend/entry.cpp.o.d"
+  "CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o"
+  "CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o.d"
+  "CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o"
+  "CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o.d"
+  "CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o"
+  "CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o.d"
+  "CMakeFiles/droneview.dir/src/backend/runtime.cpp.o"
+  "CMakeFiles/droneview.dir/src/backend/runtime.cpp.o.d"
+  "CMakeFiles/droneview.dir/src/frontend/menu.cpp.o"
+  "CMakeFiles/droneview.dir/src/frontend/menu.cpp.o.d"
+  "libcstatic.pdb"
+  "libcstatic.so"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/droneview.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

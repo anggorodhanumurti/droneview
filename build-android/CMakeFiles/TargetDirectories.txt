@@ -1,0 +1,4 @@
+/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles/imgui.dir
+/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles/droneview.dir
+/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles/edit_cache.dir
+/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles/rebuild_cache.dir

@@ -1,6 +1,7 @@
 #include "droneview/frontend.h"
 
 #include <algorithm>
+#include <atomic>
 #include <deque>
 #include <mutex>
 #include <string>
@@ -19,7 +20,7 @@ struct TouchEvent {
     int action;
 };
 
-bool g_initialized = false;
+std::atomic<bool> g_initialized{false};
 bool g_enabled = false;
 float g_value = 0.0f;
 float g_ui_scale = 1.4f;
@@ -111,7 +112,7 @@ void draw_menu() {
 }  // namespace
 
 bool initialize(const char* ini_filename, const char* log_filename) {
-    if (g_initialized) {
+    if (g_initialized.load(std::memory_order_acquire)) {
         return true;
     }
     if (ini_filename != nullptr && *ini_filename != '\0') {
@@ -144,15 +145,18 @@ bool initialize(const char* ini_filename, const char* log_filename) {
         return false;
     }
 
-    g_initialized = true;
+    g_initialized.store(true, std::memory_order_release);
     return true;
 }
 
 bool initialized() {
-    return g_initialized;
+    return g_initialized.load(std::memory_order_acquire);
 }
 
 void set_display_size(int width, int height) {
+    if (!g_initialized.load(std::memory_order_acquire)) {
+        return;
+    }
     if (width > 0 && height > 0) {
         ImGui::GetIO().DisplaySize =
             ImVec2(static_cast<float>(width), static_cast<float>(height));
@@ -160,7 +164,7 @@ void set_display_size(int width, int height) {
 }
 
 void frame() {
-    if (!g_initialized) {
+    if (!g_initialized.load(std::memory_order_acquire)) {
         return;
     }
     ImGuiIO& io = ImGui::GetIO();
@@ -183,12 +187,12 @@ void frame() {
 }
 
 void shutdown() {
-    if (!g_initialized) {
+    if (!g_initialized.load(std::memory_order_acquire)) {
         return;
     }
     ImGui_ImplOpenGL3_Shutdown();
     ImGui::DestroyContext();
-    g_initialized = false;
+    g_initialized.store(false, std::memory_order_release);
     {
         std::lock_guard<std::mutex> lock(g_touch_mutex);
         g_touch_events.clear();

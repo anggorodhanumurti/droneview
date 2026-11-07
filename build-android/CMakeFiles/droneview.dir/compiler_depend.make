@@ -8328,6 +8328,7 @@ CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o: /data/data/com.termux/fil
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/xlocale.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui/imconfig.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui/imgui.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/include/app/elf/elf_module.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/app/hooks/hook_engine.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/app/platform/platform.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/app/types.h \
@@ -9876,6 +9877,8 @@ CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o: /data/data/com.termux/f
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/xlocale.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/EGL/egl.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/EGL/eglplatform.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/GLES3/gl3.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/GLES3/gl3platform.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/KHR/khrplatform.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/app/elf/elf_module.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/app/hooks/hook_engine.h \
@@ -10650,6 +10653,7 @@ CMakeFiles/droneview.dir/src/backend/runtime.cpp.o: /data/data/com.termux/files/
   /data/data/com.termux/files/home/frida/droneview-menu/include/droneview/backend.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/droneview/frontend.h \
   /data/data/com.termux/files/home/frida/droneview-menu/src/backend/input_hook.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/src/backend/overlay_hook.h \
   /data/data/com.termux/files/home/frida/droneview-menu/src/backend/runtime.h
 
 CMakeFiles/droneview.dir/src/frontend/menu.cpp.o: /data/data/com.termux/files/home/frida/droneview-menu/src/frontend/menu.cpp \
@@ -11566,6 +11570,10 @@ CMakeFiles/droneview.dir/src/app/core/symbol_resolver.cpp.o:
 /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-aarch64-android.a:
 
 /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/aarch64/libunwind.a:
+
+/data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/GLES3/gl3platform.h:
+
+/data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/GLES3/gl3.h:
 
 /data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/EGL/egl.h:
 

@@ -784,4 +784,6 @@ CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o: \
   /data/data/com.termux/files/home/frida/droneview-menu/src/backend/runtime.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/EGL/egl.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/EGL/eglplatform.h \
-  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/KHR/khrplatform.h
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/KHR/khrplatform.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/GLES3/gl3.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/GLES3/gl3platform.h

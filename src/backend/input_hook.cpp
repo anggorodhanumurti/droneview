@@ -2,8 +2,10 @@
 
 #include <atomic>
 #include <mutex>
+#include <optional>
 #include <string>
 
+#include "app/elf/elf_module.h"
 #include "app/hooks/hook_engine.h"
 #include "app/platform/platform.h"
 #include "droneview/frontend.h"
@@ -137,15 +139,44 @@ bool install() {
         return false;
     }
     // JNINativeMethod table entry for nativeInjectEvent in the target Unity
-    // build. Validate that the slot points inside libunity before hooking:
-    // hooking an unresolved/garbage slot is what freezes the game.
+    // build. Validate that the slot is mapped inside libunity before reading:
+    // an offset from a different build can otherwise fault.
     constexpr app::uptr kSlot = 0x1888f60;
-    const app::uptr target = *reinterpret_cast<app::uptr*>(libunity + kSlot);
+    app::elf::ElfModule unity;
+    std::optional<app::elf::ElfModule::MemoryRange> range;
+    if (unity.open("libunity.so")) {
+        range = unity.memory_range();
+    }
+    const app::uptr slot_address = libunity + kSlot;
+    if (!range || slot_address < range->start ||
+        slot_address + sizeof(app::uptr) > range->start + range->size) {
+        if (!g_failure_logged) {
+            app::platform::log_error(
+                "droneview",
+                "input hook: slot 0x%lx outside libunity mapping (range=%s) tid=%llu",
+                static_cast<unsigned long>(slot_address),
+                range ? "known" : "unknown",
+                static_cast<unsigned long long>(app::platform::thread_id()));
+            g_failure_logged = true;
+        }
+        return false;
+    }
+    const app::uptr target = *reinterpret_cast<app::uptr*>(slot_address);
     if (target == 0) {
+        if (!g_failure_logged) {
+            app::platform::log_error("droneview",
+                                     "input hook: nativeInjectEvent slot empty");
+            g_failure_logged = true;
+        }
         return false;
     }
     const std::string target_path =
         app::platform::module_path(reinterpret_cast<const void*>(target));
+    app::platform::log_info(
+        "droneview", "input hook: slot=0x%lx target=0x%lx path='%s' tid=%llu",
+        static_cast<unsigned long>(slot_address),
+        static_cast<unsigned long>(target), target_path.c_str(),
+        static_cast<unsigned long long>(app::platform::thread_id()));
     if (target_path.find("libunity") == std::string::npos) {
         if (!g_failure_logged) {
             app::platform::log_error(
@@ -160,7 +191,6 @@ bool install() {
     if (target == g_last_target) {
         return false;
     }
-    g_last_target = target;
 
     app::hooks::HookEngine engine;
     const app::hooks::HookResult result = engine.install(
@@ -173,12 +203,16 @@ bool install() {
         }
         return false;
     }
+    // Only remember the target after a successful install so a failed attempt
+    // can be retried instead of blocking every later frame.
+    g_last_target = target;
     g_original = reinterpret_cast<InjectEventFn>(result.original);
     g_installed = true;
     g_failure_logged = false;
-    app::platform::log_info("droneview",
-                            "input hook installed: nativeInjectEvent @ 0x%lx",
-                            static_cast<unsigned long>(target));
+    app::platform::log_info(
+        "droneview", "input hook installed: nativeInjectEvent @ 0x%lx tid=%llu",
+        static_cast<unsigned long>(target),
+        static_cast<unsigned long long>(app::platform::thread_id()));
     return true;
 #else
     return false;

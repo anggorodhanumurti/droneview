@@ -51,6 +51,11 @@ bool Il2CppApi::bind(const core::TargetSymbolTable& table) {
     return ready();
 }
 
+void Il2CppApi::bind_optional(const core::TargetSymbolTable& table) {
+    thread_attach = bind_fn<ThreadAttachFn>(table, "il2cpp_thread_attach");
+    thread_detach = bind_fn<ThreadDetachFn>(table, "il2cpp_thread_detach");
+}
+
 void Il2CppApi::reset() {
     domain_get = nullptr;
     domain_get_assemblies = nullptr;
@@ -71,6 +76,8 @@ void Il2CppApi::reset() {
     method_get_name = nullptr;
     object_new = nullptr;
     field_get_flags = nullptr;
+    thread_attach = nullptr;
+    thread_detach = nullptr;
 }
 
 bool Il2CppApi::ready() const {

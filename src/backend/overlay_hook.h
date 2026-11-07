@@ -7,4 +7,8 @@ namespace dv::overlay {
 bool install();
 bool installed();
 
+// Marks the overlay UI as no longer renderable. The hook itself stays
+// installed, but subsequent swaps skip the ImGui frame.
+void shutdown();
+
 }  // namespace dv::overlay

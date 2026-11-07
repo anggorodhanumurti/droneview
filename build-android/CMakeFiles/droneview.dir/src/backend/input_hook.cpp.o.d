@@ -775,10 +775,11 @@ CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o: \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__mutex/once_flag.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__thread/id.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/system_error \
+  /data/data/com.termux/files/home/frida/droneview-menu/include/app/elf/elf_module.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/include/app/types.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/app/hooks/hook_engine.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/app/platform/platform.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/cstdarg \
-  /data/data/com.termux/files/home/frida/droneview-menu/include/app/types.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/droneview/frontend.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/jni.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui/imgui.h \

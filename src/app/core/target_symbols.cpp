@@ -39,6 +39,23 @@ std::vector<std::string> target_symbol_names() {
     return names;
 }
 
+const std::vector<TargetSymbolInfo>& optional_target_symbols() {
+    static const std::vector<TargetSymbolInfo> symbols = {
+        {"il2cpp_thread_attach", nullptr, "attach native thread to IL2CPP"},
+        {"il2cpp_thread_detach", nullptr, "detach native thread from IL2CPP"},
+    };
+    return symbols;
+}
+
+std::vector<std::string> optional_target_symbol_names() {
+    std::vector<std::string> names;
+    names.reserve(optional_target_symbols().size());
+    for (const auto& symbol : optional_target_symbols()) {
+        names.emplace_back(symbol.api_name);
+    }
+    return names;
+}
+
 void TargetSymbolTable::clear() {
     std::lock_guard<std::mutex> lock(mutex_);
     symbols_.clear();

@@ -10,6 +10,7 @@
 #include "runtime.h"
 
 #include <EGL/egl.h>
+#include <GLES3/gl3.h>
 
 namespace dv::overlay {
 namespace {
@@ -24,6 +25,10 @@ std::atomic<bool> g_ui_ready{false};
 std::atomic<bool> g_ui_initializing{false};
 std::atomic<int> g_ui_retry_frames{0};
 
+const char* safe_gl_string(GLenum name) {
+    return reinterpret_cast<const char*>(glGetString(name));
+}
+
 void ensure_ui() {
     if (g_ui_ready.load(std::memory_order_acquire)) {
         return;
@@ -34,24 +39,46 @@ void ensure_ui() {
         g_ui_retry_frames.fetch_sub(1, std::memory_order_relaxed);
         return;
     }
+    const EGLContext context = eglGetCurrentContext();
+    if (context == EGL_NO_CONTEXT) {
+        g_ui_retry_frames.store(120, std::memory_order_relaxed);
+        app::platform::log_error(
+            "droneview",
+            "overlay: no current EGL context on swap thread (tid=%llu)",
+            static_cast<unsigned long long>(app::platform::thread_id()));
+        return;
+    }
     bool expected = false;
     if (!g_ui_initializing.compare_exchange_strong(expected, true,
                                                    std::memory_order_acq_rel)) {
         return;
     }
+    const EGLSurface draw_surface = eglGetCurrentSurface(EGL_DRAW);
+    const char* gl_version = safe_gl_string(GL_VERSION);
+    const char* gl_renderer = safe_gl_string(GL_RENDERER);
     if (dv::runtime::ensure_ui()) {
         g_ui_ready.store(true, std::memory_order_release);
-        app::platform::log_info("droneview", "overlay UI ready");
+        app::platform::log_info(
+            "droneview",
+            "overlay UI ready (tid=%llu ctx=%p draw=%p gl='%s' renderer='%s')",
+            static_cast<unsigned long long>(app::platform::thread_id()),
+            reinterpret_cast<void*>(context), reinterpret_cast<void*>(draw_surface),
+            gl_version != nullptr ? gl_version : "?",
+            gl_renderer != nullptr ? gl_renderer : "?");
     } else {
         g_ui_retry_frames.store(120, std::memory_order_relaxed);
-        app::platform::log_error("droneview", "UI init failed; retrying");
+        app::platform::log_error(
+            "droneview", "UI init failed; retrying (tid=%llu ctx=%p gl='%s')",
+            static_cast<unsigned long long>(app::platform::thread_id()),
+            reinterpret_cast<void*>(context), gl_version != nullptr ? gl_version : "?");
     }
     g_ui_initializing.store(false, std::memory_order_release);
 }
 
 EGLBoolean overlay_swap(EGLDisplay display, EGLSurface surface) {
     ensure_ui();
-    if (g_ui_ready.load(std::memory_order_acquire)) {
+    if (g_ui_ready.load(std::memory_order_acquire) && dv::runtime::ui_ready() &&
+        eglGetCurrentContext() != EGL_NO_CONTEXT) {
         EGLint width = 0;
         EGLint height = 0;
         if (eglQuerySurface(display, surface, EGL_WIDTH, &width) == EGL_TRUE &&
@@ -115,6 +142,13 @@ bool install() {
 bool installed() {
     std::lock_guard<std::mutex> lock(g_install_mutex);
     return g_installed;
+}
+
+void shutdown() {
+    std::lock_guard<std::mutex> lock(g_install_mutex);
+    g_ui_ready.store(false, std::memory_order_release);
+    g_ui_initializing.store(false, std::memory_order_relaxed);
+    g_ui_retry_frames.store(0, std::memory_order_relaxed);
 }
 
 }  // namespace dv::overlay

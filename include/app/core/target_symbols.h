@@ -21,6 +21,10 @@ struct TargetSymbolInfo {
 const std::vector<TargetSymbolInfo>& target_symbols();
 std::vector<std::string> target_symbol_names();
 
+// Optional symbols. Missing entries are tolerated and never block binding.
+const std::vector<TargetSymbolInfo>& optional_target_symbols();
+std::vector<std::string> optional_target_symbol_names();
+
 class TargetSymbolTable {
 public:
     void clear();

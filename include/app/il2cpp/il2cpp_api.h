@@ -40,6 +40,8 @@ struct Il2CppApi {
     using MethodGetNameFn = const char* (*)(const MethodInfo*);
     using ObjectNewFn = Object* (*)(Class*);
     using FieldGetFlagsFn = int (*)(FieldInfo*);
+    using ThreadAttachFn = void* (*)(Domain*);
+    using ThreadDetachFn = void (*)(void*);
 
     DomainGetFn domain_get = nullptr;
     DomainGetAssembliesFn domain_get_assemblies = nullptr;
@@ -60,8 +62,13 @@ struct Il2CppApi {
     MethodGetNameFn method_get_name = nullptr;
     ObjectNewFn object_new = nullptr;
     FieldGetFlagsFn field_get_flags = nullptr;
+    // Optional: resolved separately so a missing attach export does not block
+    // the required 19-symbol binding.
+    ThreadAttachFn thread_attach = nullptr;
+    ThreadDetachFn thread_detach = nullptr;
 
     bool bind(const core::TargetSymbolTable& table);
+    void bind_optional(const core::TargetSymbolTable& table);
     void reset();
     bool ready() const;
     bool has_required_symbols() const;

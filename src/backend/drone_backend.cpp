@@ -368,7 +368,7 @@ void apply(bool enabled, float value) {
             static_cast<unsigned long long>(app::platform::thread_id()));
     }
 
-    const float fov = std::max(20.0f, std::min(120.0f, 60.0f + value));
+    const float fov = std::max(20.0f, std::min(120.0f, 40.0f + value));
     set_fov(camera, fov);
     if (!g_logged_enabled) {
         app::platform::log_info(kTag, "applying FOV %.2f (value %.2f)", fov, value);

@@ -24,6 +24,9 @@ std::atomic<bool> g_initialized{false};
 bool g_enabled = false;
 float g_value = 0.0f;
 float g_ui_scale = 1.4f;
+bool g_collapsed = false;
+bool g_restore_expanded_size = false;
+ImVec2 g_expanded_size(390.0f, 240.0f);
 std::string g_ini_filename = "droneview.ini";
 std::string g_log_filename = "droneview_.txt";
 ImGuiStyle g_base_style;
@@ -91,11 +94,74 @@ void apply_touch_events() {
 }
 
 void draw_menu() {
+    const ImGuiStyle& style = ImGui::GetStyle();
+    const float titlebar_height =
+        ImGui::GetFrameHeight() + style.WindowPadding.y * 2.0f;
+
+    if (g_collapsed) {
+        ImGui::SetNextWindowSize(ImVec2(g_expanded_size.x, titlebar_height),
+                                 ImGuiCond_Always);
+    } else if (g_restore_expanded_size) {
+        ImGui::SetNextWindowSize(g_expanded_size, ImGuiCond_Always);
+        g_restore_expanded_size = false;
+    } else {
+        ImGui::SetNextWindowSize(ImVec2(390.0f, 240.0f), ImGuiCond_FirstUseEver);
+    }
     ImGui::SetNextWindowPos(ImVec2(40.0f, 40.0f), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(390.0f, 240.0f), ImGuiCond_FirstUseEver);
-    const ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
-    if (ImGui::Begin("Drone View", nullptr, flags)) {
-        record_menu_rect();
+    // Collapse is handled by the custom title bar, never by ImGui's built-in
+    // title-bar state (which is disabled by NoTitleBar).
+    ImGui::SetNextWindowCollapsed(false, ImGuiCond_Always);
+
+    ImGuiWindowFlags flags =
+        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
+    if (g_collapsed) {
+        flags |= ImGuiWindowFlags_NoResize;
+    }
+
+    if (!ImGui::Begin("Drone View", nullptr, flags)) {
+        ImGui::End();
+        return;
+    }
+
+    record_menu_rect();
+
+    // Custom title bar: ▼ minimizes, ▶ expands. The rest of the title row is
+    // the drag handle because NoTitleBar disables the default one.
+    const bool toggle = ImGui::ArrowButton(
+        "##droneview_toggle", g_collapsed ? ImGuiDir_Right : ImGuiDir_Down);
+    ImGui::SameLine();
+
+    const ImVec2 title_pos = ImGui::GetCursorScreenPos();
+    const float title_width = ImGui::GetContentRegionAvail().x;
+    if (title_width > 0.0f) {
+        ImGui::InvisibleButton("##droneview_drag",
+                               ImVec2(title_width, ImGui::GetFrameHeight()));
+        if (ImGui::IsItemActive() &&
+            ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+            const ImVec2 pos = ImGui::GetWindowPos();
+            const ImVec2 delta = ImGui::GetIO().MouseDelta;
+            ImGui::SetWindowPos(ImVec2(pos.x + delta.x, pos.y + delta.y));
+        }
+    }
+    ImGui::GetWindowDrawList()->AddText(
+        ImVec2(title_pos.x + style.FramePadding.x,
+               title_pos.y + style.FramePadding.y),
+        ImGui::GetColorU32(ImGuiCol_Text), "Drone View");
+
+    bool expand_clicked = false;
+    if (toggle) {
+        if (g_collapsed) {
+            g_collapsed = false;
+            g_restore_expanded_size = true;
+            expand_clicked = true;
+        } else {
+            g_expanded_size = ImGui::GetWindowSize();
+            g_collapsed = true;
+        }
+    }
+
+    if (!g_collapsed && !expand_clicked) {
+        ImGui::Separator();
         ImGui::TextDisabled("MLBB Drone View");
         ImGui::Separator();
         ImGui::Checkbox("Enable", &g_enabled);
@@ -104,8 +170,10 @@ void draw_menu() {
         ImGui::Separator();
         const std::string state = dv::backend::status();
         ImGui::TextWrapped("Backend: %s", state.c_str());
-        ImGui::TextDisabled("FOV = 60 + Value (clamped 20..120)");
+        ImGui::TextDisabled("FOV = 40 + Value (clamped 20..120)");
+        g_expanded_size = ImGui::GetWindowSize();
     }
+
     ImGui::End();
 }
 

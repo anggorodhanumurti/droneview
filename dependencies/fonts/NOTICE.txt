@@ -1,0 +1,4 @@
+DroidSans.ttf
+Copyright (C) 2007 Google Corporation.
+Source: AOSP platform/frameworks/base, android-4.4_r1, data/fonts/DroidSans.ttf
+License: Apache License 2.0 (see LICENSE-2.0.txt)

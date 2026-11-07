@@ -6,10 +6,13 @@
 #include <mutex>
 #include <string>
 
+#include "app/platform/platform.h"
 #include "droneview/backend.h"
 
 #include "imgui.h"
 #include "backends/imgui_impl_opengl3.h"
+
+#include "droidsans_ttf.inc"
 
 namespace dv::frontend {
 namespace {
@@ -24,6 +27,8 @@ std::atomic<bool> g_initialized{false};
 bool g_enabled = false;
 float g_value = 0.0f;
 float g_ui_scale = 1.4f;
+float g_font_scale = 1.0f;
+constexpr float kFontPixelSize = 18.0f;
 bool g_collapsed = false;
 bool g_restore_expanded_size = false;
 ImVec2 g_expanded_size(390.0f, 240.0f);
@@ -202,7 +207,29 @@ bool initialize(const char* ini_filename, const char* log_filename) {
     ImGui::StyleColorsDark();
     g_base_style = ImGui::GetStyle();
     ImGui::GetStyle().ScaleAllSizes(g_ui_scale);
-    io.FontGlobalScale = g_ui_scale;
+
+    ImFontConfig font_config;
+    font_config.FontDataOwnedByAtlas = false;
+    font_config.OversampleH = 2;
+    font_config.OversampleV = 2;
+    font_config.PixelSnapH = true;
+    ImFont* font = io.Fonts->AddFontFromMemoryTTF(
+        const_cast<unsigned char*>(kDroidSansTtf),
+        static_cast<int>(kDroidSansTtf_len), kFontPixelSize, &font_config,
+        io.Fonts->GetGlyphRangesDefault());
+    if (font != nullptr) {
+        io.FontDefault = font;
+        g_font_scale = 1.0f;
+        app::platform::log_info("droneview",
+                                "UI font: embedded DroidSans @ %.0fpx",
+                                kFontPixelSize);
+    } else {
+        io.Fonts->AddFontDefault();
+        g_font_scale = g_ui_scale;
+        app::platform::log_error(
+            "droneview", "UI font: embedded DroidSans failed; using default");
+    }
+    io.FontGlobalScale = g_font_scale;
 
     if (!io.Fonts->Build()) {
         ImGui::DestroyContext();
@@ -237,7 +264,7 @@ void frame() {
     }
     ImGuiIO& io = ImGui::GetIO();
     ImGui_ImplOpenGL3_NewFrame();
-    io.FontGlobalScale = g_ui_scale;
+    io.FontGlobalScale = g_font_scale;
     {
         ImGuiStyle scaled = g_base_style;
         scaled.ScaleAllSizes(g_ui_scale);

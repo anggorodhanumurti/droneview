@@ -59,15 +59,11 @@ build-android/libcstatic.so
 - ELF64 AArch64, Android 23, SONAME `libcstatic.so`
 - statically linked libc++, **no `libc++_shared.so` dependency**
 
-## Deploy
+## How to Install
 
-```text
-lib/arm64-v8a/libcstatic.so
-```
-
-Delete any old `libcstatic.so` / `libum_*.so` / `libc++_shared.so` from the same
-directory. Repack with `.so` stored uncompressed (`zip -0`), `zipalign -p 4`,
-then re-sign.
+1. Download the latest Release APK from the [latest Release](https://github.com/anggorodhanumurti/droneview/releases/latest) page.
+2. Extract and install the APK inside those zip files.
+3. Clone MLBB and launch MLBB from inside Meta+ Evolution Space.
 
 ## Logs
 

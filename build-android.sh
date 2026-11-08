@@ -47,6 +47,22 @@ if command -v patchelf >/dev/null 2>&1; then
         patchelf --set-rpath '$ORIGIN' "$BUILD_DIR/libcstatic.so"
 fi
 
+# Strip debug metadata so the deployed .so stays small. This only removes
+# .debug_*, .symtab and .strtab; code, data, .dynsym and exported symbols are
+# untouched. An unstripped copy is kept for crash/symbol analysis.
+if [[ -f "$BUILD_DIR/libcstatic.so" ]]; then
+    STRIP_BIN="$(command -v llvm-strip || command -v strip || true)"
+    if [[ -n "$STRIP_BIN" ]]; then
+        cp -f "$BUILD_DIR/libcstatic.so" "$BUILD_DIR/libcstatic.unstripped.so"
+        before="$(stat -c %s "$BUILD_DIR/libcstatic.so")"
+        "$STRIP_BIN" --strip-unneeded "$BUILD_DIR/libcstatic.so"
+        after="$(stat -c %s "$BUILD_DIR/libcstatic.so")"
+        printf '==> stripped: %s -> %s bytes\n' "$before" "$after"
+    else
+        echo "warning: llvm-strip/strip not found; library left unstripped" >&2
+    fi
+fi
+
 echo "==> artifact"
 printf '    %-55s %s\n' "$BUILD_DIR/libcstatic.so" "$(du -h "$BUILD_DIR/libcstatic.so" | cut -f1)"
 echo "==> deploy libcstatic.so into lib/arm64-v8a/ (no libc++_shared.so needed)"

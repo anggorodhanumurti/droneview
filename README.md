@@ -1,4 +1,4 @@
-# MLBB Drone View Mod
+# MLBB Droneview Mod
 
 <p align="center">
   <img src="droneview_wide.jpg" alt="MLBB Drone View Mod - Wide preset" width="600">

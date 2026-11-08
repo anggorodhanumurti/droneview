@@ -25,7 +25,8 @@ struct TouchEvent {
 
 std::atomic<bool> g_initialized{false};
 bool g_enabled = false;
-float g_value = 0.0f;
+int g_fov_index = 0;
+constexpr float kFovPresets[] = {40.0f, 60.0f, 80.0f};
 float g_ui_scale = 1.4f;
 float g_font_scale = 1.0f;
 constexpr float kFontPixelSize = 18.0f;
@@ -170,12 +171,13 @@ void draw_menu() {
         ImGui::TextDisabled("MLBB Drone View");
         ImGui::Separator();
         ImGui::Checkbox("Enable", &g_enabled);
-        ImGui::SetNextItemWidth(220.0f * g_ui_scale);
-        ImGui::SliderFloat("Value", &g_value, 0.0f, 20.0f, "%.1f");
+        ImGui::TextUnformatted("FOV");
+        ImGui::RadioButton("Medium (FOV 40)", &g_fov_index, 0);
+        ImGui::RadioButton("Wide (FOV 60)", &g_fov_index, 1);
+        ImGui::RadioButton("Birdeye (FOV 80)", &g_fov_index, 2);
         ImGui::Separator();
         const std::string state = dv::backend::status();
         ImGui::TextWrapped("Backend: %s", state.c_str());
-        ImGui::TextDisabled("FOV = 40 + Value (clamped 20..120)");
         g_expanded_size = ImGui::GetWindowSize();
     }
 
@@ -278,7 +280,7 @@ void frame() {
 
     // Apply the UI state after rendering so the menu stays responsive even if
     // the game is still resolving IL2CPP bindings.
-    dv::backend::apply(g_enabled, g_value);
+    dv::backend::apply(g_enabled, kFovPresets[g_fov_index]);
 }
 
 void shutdown() {

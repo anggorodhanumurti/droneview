@@ -33,8 +33,8 @@ droneview-menu/
 - The menu appears on the first frame after the library is loaded.
 - `Enable` off → original camera FOV is restored.
 - `Enable` on → `GameMethod.ShowCamera()` (if present) and
-  `UnityEngine.Camera.set_fieldOfView(40 + Value)`, clamped to `20..120`.
-- `Value` slider range is `0..20`.
+  `UnityEngine.Camera.set_fieldOfView(FOV)`, clamped to `20..120`.
+- `FOV` radio presets: `Medium` = 40, `Wide` = 60, `Birdeye` = 80.
 - Binding resolution runs on a worker thread; the render thread is never
   blocked. `liblogic.so` is the primary source, `libcsharp.so` fills missing
   symbols. The worker never `dlopen`s a library the game has not loaded.

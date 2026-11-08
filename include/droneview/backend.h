@@ -19,6 +19,6 @@ std::string status();
 
 // Applies or restores the drone FOV. Called from the render thread every
 // frame; cheap once bound. Safe to call before ready().
-void apply(bool enabled, float value);
+void apply(bool enabled, float fov);
 
 }  // namespace dv::backend

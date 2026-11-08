@@ -311,7 +311,7 @@ std::string status() {
     return g_status;
 }
 
-void apply(bool enabled, float value) {
+void apply(bool enabled, float fov) {
     std::lock_guard<std::mutex> lock(g_mutex);
     if (!g_ready.load(std::memory_order_acquire) || g_camera_field == nullptr ||
         g_set_fov == nullptr) {
@@ -368,10 +368,10 @@ void apply(bool enabled, float value) {
             static_cast<unsigned long long>(app::platform::thread_id()));
     }
 
-    const float fov = std::max(20.0f, std::min(120.0f, 40.0f + value));
-    set_fov(camera, fov);
+    const float applied_fov = std::max(20.0f, std::min(120.0f, fov));
+    set_fov(camera, applied_fov);
     if (!g_logged_enabled) {
-        app::platform::log_info(kTag, "applying FOV %.2f (value %.2f)", fov, value);
+        app::platform::log_info(kTag, "applying FOV %.2f", applied_fov);
         g_logged_enabled = true;
     }
 }

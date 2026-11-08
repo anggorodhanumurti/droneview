@@ -11501,8 +11501,10 @@ CMakeFiles/droneview.dir/src/frontend/menu.cpp.o: /data/data/com.termux/files/ho
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui/backends/imgui_impl_opengl3.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui/imconfig.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui/imgui.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/include/app/platform/platform.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/droneview/backend.h \
-  /data/data/com.termux/files/home/frida/droneview-menu/include/droneview/frontend.h
+  /data/data/com.termux/files/home/frida/droneview-menu/include/droneview/frontend.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/src/frontend/droidsans_ttf.inc
 
 libcstatic.so: /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/aarch64/libunwind.a \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/libclang_rt.builtins-aarch64-android.a \
@@ -11746,6 +11748,8 @@ CMakeFiles/droneview.dir/src/app/core/symbol_resolver.cpp.o:
 /data/data/com.termux/files/home/frida/droneview-menu/include/app/core/symbol_resolver.h:
 
 /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/xlocale.h:
+
+/data/data/com.termux/files/home/frida/droneview-menu/src/frontend/droidsans_ttf.inc:
 
 /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/wctype.h:
 

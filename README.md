@@ -1,12 +1,16 @@
-# droneview-menu
+# MLBB Drone View Mod
+
+<p align="center">
+  <img src="droneview_wide.jpg" alt="MLBB Drone View Mod - Wide preset" width="600">
+</p>
 
 Single-purpose MLBB **Drone View** menu. No modular loader, no backends to
 select, no extra features. One shared library, split into:
 
 - **backend** — ELF/GlossHook, IL2CPP resolution, `eglSwapBuffers` and Unity
   input hooks, Drone View camera control.
-- **frontend** — Dear ImGui 1.85 + OpenGL3 menu (Enable checkbox + Value
-  slider), touch handling.
+- **frontend** — Dear ImGui 1.85 + OpenGL3 menu (Enable checkbox + FOV radio
+  presets), touch handling.
 
 ## Layout
 

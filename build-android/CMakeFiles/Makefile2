@@ -88,7 +88,7 @@ clean: CMakeFiles/droneview.dir/clean
 CMakeFiles/imgui.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/imgui.dir/build.make CMakeFiles/imgui.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/imgui.dir/build.make CMakeFiles/imgui.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=16,17,18,19,20,21 "Built target imgui"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=17,18,19,20,21,22 "Built target imgui"
 .PHONY : CMakeFiles/imgui.dir/all
 
 # Build rule for subdir invocation for target.
@@ -105,7 +105,7 @@ imgui: CMakeFiles/imgui.dir/rule
 # codegen rule for target.
 CMakeFiles/imgui.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/imgui.dir/build.make CMakeFiles/imgui.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=16,17,18,19,20,21 "Finished codegen for target imgui"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=17,18,19,20,21,22 "Finished codegen for target imgui"
 .PHONY : CMakeFiles/imgui.dir/codegen
 
 # clean rule for target.
@@ -120,12 +120,12 @@ CMakeFiles/imgui.dir/clean:
 CMakeFiles/droneview.dir/all: CMakeFiles/imgui.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/droneview.dir/build.make CMakeFiles/droneview.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/droneview.dir/build.make CMakeFiles/droneview.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 "Built target droneview"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 "Built target droneview"
 .PHONY : CMakeFiles/droneview.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/droneview.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles 21
+	$(CMAKE_COMMAND) -E cmake_progress_start /data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles 22
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/droneview.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles 0
 .PHONY : CMakeFiles/droneview.dir/rule
@@ -137,7 +137,7 @@ droneview: CMakeFiles/droneview.dir/rule
 # codegen rule for target.
 CMakeFiles/droneview.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/droneview.dir/build.make CMakeFiles/droneview.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 "Finished codegen for target droneview"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 "Finished codegen for target droneview"
 .PHONY : CMakeFiles/droneview.dir/codegen
 
 # clean rule for target.

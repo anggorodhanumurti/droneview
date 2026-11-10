@@ -14,6 +14,10 @@ void shutdown();
 // field/methods were resolved.
 bool ready();
 
+// True only after the initial checks passed: MLBB is v2.2.16 and at least one
+// native game library (libfirst/libcsharp/liblogic) is loaded.
+bool initial_checks_passed();
+
 // Human readable resolution state (safe to call from the render thread).
 std::string status();
 

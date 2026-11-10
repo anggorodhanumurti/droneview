@@ -103,6 +103,14 @@ void draw_menu() {
     const ImGuiStyle& style = ImGui::GetStyle();
     const float titlebar_height =
         ImGui::GetFrameHeight() + style.WindowPadding.y * 2.0f;
+    // The menu is only interactive once the backend verified MLBB v2.2.16.
+    const bool ui_enabled = dv::backend::initial_checks_passed();
+
+    // Keep the status line visible while the version is unsupported.
+    if (!ui_enabled && g_collapsed) {
+        g_collapsed = false;
+        g_restore_expanded_size = true;
+    }
 
     if (g_collapsed) {
         ImGui::SetNextWindowSize(ImVec2(g_expanded_size.x, titlebar_height),
@@ -133,8 +141,10 @@ void draw_menu() {
 
     // Custom title bar: ▼ minimizes, ▶ expands. The rest of the title row is
     // the drag handle because NoTitleBar disables the default one.
+    ImGui::BeginDisabled(!ui_enabled);
     const bool toggle = ImGui::ArrowButton(
         "##droneview_toggle", g_collapsed ? ImGuiDir_Right : ImGuiDir_Down);
+    ImGui::EndDisabled();
     ImGui::SameLine();
 
     const ImVec2 title_pos = ImGui::GetCursorScreenPos();
@@ -170,14 +180,16 @@ void draw_menu() {
         ImGui::Separator();
         ImGui::TextDisabled("MLBB Drone View");
         ImGui::Separator();
+        ImGui::BeginDisabled(!ui_enabled);
         ImGui::Checkbox("Enable", &g_enabled);
         ImGui::TextUnformatted("FOV");
         ImGui::RadioButton("Medium (FOV 40)", &g_fov_index, 0);
         ImGui::RadioButton("Wide (FOV 60)", &g_fov_index, 1);
         ImGui::RadioButton("Birdeye (FOV 80)", &g_fov_index, 2);
+        ImGui::EndDisabled();
         ImGui::Separator();
         const std::string state = dv::backend::status();
-        ImGui::TextWrapped("Backend: %s", state.c_str());
+        ImGui::TextWrapped("%s", state.c_str());
         g_expanded_size = ImGui::GetWindowSize();
     }
 

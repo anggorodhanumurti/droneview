@@ -14,21 +14,24 @@
 #include "app/il2cpp/il2cpp_api.h"
 #include "app/il2cpp/il2cpp_helpers.h"
 #include "app/platform/platform.h"
+#include "initial_check.h"
 
 namespace dv::backend {
 namespace {
 
 constexpr const char* kTag = "droneview";
-// MLBB exposes the IL2CPP runtime through liblogic.so and libcsharp.so.
-const char* const kCandidates[] = {"liblogic.so", "libcsharp.so"};
+// MLBB exposes the IL2CPP runtime through libfirst.so, libcsharp.so and
+// liblogic.so. liblogic/libcsharp carry the symbol table used below.
+const char* const kCandidates[] = {"liblogic.so", "libcsharp.so", "libfirst.so"};
 
 std::mutex g_mutex;
 std::atomic<bool> g_ready{false};
+std::atomic<bool> g_initial_checks_passed{false};
 std::atomic<bool> g_stop{false};
 std::thread g_worker;
 std::once_flag g_start_once;
 
-std::string g_status = "waiting for liblogic.so / libcsharp.so";
+std::string g_status = "Not Ready: checking MLBB version...";
 
 app::il2cpp::FieldInfo* g_camera_field = nullptr;
 void* g_show_camera = nullptr;
@@ -236,7 +239,7 @@ bool resolve_once(int attempt) {
         g_show_camera = show_camera;
         g_get_fov = get_fov;
         g_set_fov = set_fov;
-        g_status = "ready";
+        g_status = "Ready!";
         g_ready.store(true, std::memory_order_release);
     }
     app::platform::log_info(
@@ -246,7 +249,56 @@ bool resolve_once(int attempt) {
     return true;
 }
 
+// Initial check phase: no game hooking or IL2CPP access happens until the
+// installed build is v2.2.16 and one of the native game libraries is loaded.
 void worker_main() {
+    bool checks_passed = false;
+    while (!g_stop.load(std::memory_order_acquire)) {
+        const dv::initial_check::Result check = dv::initial_check::run();
+        switch (check.status) {
+            case dv::initial_check::Status::VersionPending:
+                set_status("Not Ready: checking MLBB version...");
+                app::platform::log_info(kTag, "waiting for app version");
+                break;
+            case dv::initial_check::Status::VersionUnsupported:
+                g_initial_checks_passed.store(false, std::memory_order_release);
+                set_status(dv::initial_check::unsupported_version_status(
+                    check.version));
+                app::platform::log_error(
+                    kTag,
+                    "unsupported MLBB version '%s' (expected 2.2.16); "
+                    "disabling menu",
+                    check.version.c_str());
+                return;
+            case dv::initial_check::Status::GameLibraryMissing:
+                g_initial_checks_passed.store(false, std::memory_order_release);
+                set_status("Not Ready! game lib is not loaded");
+                app::platform::log_info(
+                    kTag,
+                    "MLBB version '%s' supported, waiting for libfirst.so / "
+                    "libcsharp.so / liblogic.so",
+                    check.version.c_str());
+                break;
+            case dv::initial_check::Status::Passed:
+                g_initial_checks_passed.store(true, std::memory_order_release);
+                set_status("waiting for IL2CPP bindings");
+                app::platform::log_info(
+                    kTag, "initial checks passed: MLBB '%s', game lib loaded",
+                    check.version.c_str());
+                checks_passed = true;
+                break;
+        }
+        if (checks_passed) {
+            break;
+        }
+        for (int i = 0; i < 5 && !g_stop.load(std::memory_order_acquire); ++i) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        }
+    }
+    if (g_stop.load(std::memory_order_acquire)) {
+        return;
+    }
+
     // Give Unity time to finish loading the IL2CPP domain and assemblies before
     // this foreign thread reads metadata for the first time.
     for (int i = 0; i < 15 && !g_stop.load(std::memory_order_acquire); ++i) {
@@ -293,6 +345,7 @@ void shutdown() {
     }
     std::lock_guard<std::mutex> lock(g_mutex);
     g_ready.store(false, std::memory_order_release);
+    g_initial_checks_passed.store(false, std::memory_order_release);
     g_camera_field = nullptr;
     g_show_camera = nullptr;
     g_get_fov = nullptr;
@@ -306,6 +359,10 @@ bool ready() {
     return g_ready.load(std::memory_order_acquire);
 }
 
+bool initial_checks_passed() {
+    return g_initial_checks_passed.load(std::memory_order_acquire);
+}
+
 std::string status() {
     std::lock_guard<std::mutex> lock(g_mutex);
     return g_status;
@@ -313,6 +370,10 @@ std::string status() {
 
 void apply(bool enabled, float fov) {
     std::lock_guard<std::mutex> lock(g_mutex);
+    if (!g_initial_checks_passed.load(std::memory_order_acquire)) {
+        g_logged_enabled = false;
+        return;
+    }
     if (!g_ready.load(std::memory_order_acquire) || g_camera_field == nullptr ||
         g_set_fov == nullptr) {
         g_logged_enabled = false;

@@ -14,6 +14,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* /*reserved*/) {
         app::platform::log_error("droneview", "JNI_OnLoad: GetEnv failed");
         return -1;
     }
+    app::platform::set_java_vm(vm);
     app::platform::log_info("droneview", "JNI_OnLoad: JavaVM stored (%p)",
                             static_cast<void*>(vm));
 #if DRONEVIEW_AUTOSTART

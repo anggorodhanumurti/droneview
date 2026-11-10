@@ -184,10 +184,24 @@ CMakeFiles/droneview.dir/src/backend/drone_backend.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/droneview.dir/src/backend/drone_backend.cpp.s"
 	/data/data/com.termux/files/usr/bin/clang++ --target=aarch64-linux-android23 --sysroot=/data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data/data/com.termux/files/home/frida/droneview-menu/src/backend/drone_backend.cpp -o CMakeFiles/droneview.dir/src/backend/drone_backend.cpp.s
 
+CMakeFiles/droneview.dir/src/backend/initial_check.cpp.o: CMakeFiles/droneview.dir/flags.make
+CMakeFiles/droneview.dir/src/backend/initial_check.cpp.o: /data/data/com.termux/files/home/frida/droneview-menu/src/backend/initial_check.cpp
+CMakeFiles/droneview.dir/src/backend/initial_check.cpp.o: CMakeFiles/droneview.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/droneview.dir/src/backend/initial_check.cpp.o"
+	/data/data/com.termux/files/usr/bin/clang++ --target=aarch64-linux-android23 --sysroot=/data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/droneview.dir/src/backend/initial_check.cpp.o -MF CMakeFiles/droneview.dir/src/backend/initial_check.cpp.o.d -o CMakeFiles/droneview.dir/src/backend/initial_check.cpp.o -c /data/data/com.termux/files/home/frida/droneview-menu/src/backend/initial_check.cpp
+
+CMakeFiles/droneview.dir/src/backend/initial_check.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/droneview.dir/src/backend/initial_check.cpp.i"
+	/data/data/com.termux/files/usr/bin/clang++ --target=aarch64-linux-android23 --sysroot=/data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /data/data/com.termux/files/home/frida/droneview-menu/src/backend/initial_check.cpp > CMakeFiles/droneview.dir/src/backend/initial_check.cpp.i
+
+CMakeFiles/droneview.dir/src/backend/initial_check.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/droneview.dir/src/backend/initial_check.cpp.s"
+	/data/data/com.termux/files/usr/bin/clang++ --target=aarch64-linux-android23 --sysroot=/data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /data/data/com.termux/files/home/frida/droneview-menu/src/backend/initial_check.cpp -o CMakeFiles/droneview.dir/src/backend/initial_check.cpp.s
+
 CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o: CMakeFiles/droneview.dir/flags.make
 CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o: /data/data/com.termux/files/home/frida/droneview-menu/src/backend/overlay_hook.cpp
 CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o: CMakeFiles/droneview.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o"
 	/data/data/com.termux/files/usr/bin/clang++ --target=aarch64-linux-android23 --sysroot=/data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o -MF CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o.d -o CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o -c /data/data/com.termux/files/home/frida/droneview-menu/src/backend/overlay_hook.cpp
 
 CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.i: cmake_force
@@ -201,7 +215,7 @@ CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.s: cmake_force
 CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o: CMakeFiles/droneview.dir/flags.make
 CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o: /data/data/com.termux/files/home/frida/droneview-menu/src/backend/input_hook.cpp
 CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o: CMakeFiles/droneview.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o"
 	/data/data/com.termux/files/usr/bin/clang++ --target=aarch64-linux-android23 --sysroot=/data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o -MF CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o.d -o CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o -c /data/data/com.termux/files/home/frida/droneview-menu/src/backend/input_hook.cpp
 
 CMakeFiles/droneview.dir/src/backend/input_hook.cpp.i: cmake_force
@@ -215,7 +229,7 @@ CMakeFiles/droneview.dir/src/backend/input_hook.cpp.s: cmake_force
 CMakeFiles/droneview.dir/src/backend/runtime.cpp.o: CMakeFiles/droneview.dir/flags.make
 CMakeFiles/droneview.dir/src/backend/runtime.cpp.o: /data/data/com.termux/files/home/frida/droneview-menu/src/backend/runtime.cpp
 CMakeFiles/droneview.dir/src/backend/runtime.cpp.o: CMakeFiles/droneview.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/droneview.dir/src/backend/runtime.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/droneview.dir/src/backend/runtime.cpp.o"
 	/data/data/com.termux/files/usr/bin/clang++ --target=aarch64-linux-android23 --sysroot=/data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/droneview.dir/src/backend/runtime.cpp.o -MF CMakeFiles/droneview.dir/src/backend/runtime.cpp.o.d -o CMakeFiles/droneview.dir/src/backend/runtime.cpp.o -c /data/data/com.termux/files/home/frida/droneview-menu/src/backend/runtime.cpp
 
 CMakeFiles/droneview.dir/src/backend/runtime.cpp.i: cmake_force
@@ -229,7 +243,7 @@ CMakeFiles/droneview.dir/src/backend/runtime.cpp.s: cmake_force
 CMakeFiles/droneview.dir/src/backend/entry.cpp.o: CMakeFiles/droneview.dir/flags.make
 CMakeFiles/droneview.dir/src/backend/entry.cpp.o: /data/data/com.termux/files/home/frida/droneview-menu/src/backend/entry.cpp
 CMakeFiles/droneview.dir/src/backend/entry.cpp.o: CMakeFiles/droneview.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/droneview.dir/src/backend/entry.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/droneview.dir/src/backend/entry.cpp.o"
 	/data/data/com.termux/files/usr/bin/clang++ --target=aarch64-linux-android23 --sysroot=/data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/droneview.dir/src/backend/entry.cpp.o -MF CMakeFiles/droneview.dir/src/backend/entry.cpp.o.d -o CMakeFiles/droneview.dir/src/backend/entry.cpp.o -c /data/data/com.termux/files/home/frida/droneview-menu/src/backend/entry.cpp
 
 CMakeFiles/droneview.dir/src/backend/entry.cpp.i: cmake_force
@@ -243,7 +257,7 @@ CMakeFiles/droneview.dir/src/backend/entry.cpp.s: cmake_force
 CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o: CMakeFiles/droneview.dir/flags.make
 CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o: /data/data/com.termux/files/home/frida/droneview-menu/src/backend/jni_onload.cpp
 CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o: CMakeFiles/droneview.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o"
 	/data/data/com.termux/files/usr/bin/clang++ --target=aarch64-linux-android23 --sysroot=/data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o -MF CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o.d -o CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o -c /data/data/com.termux/files/home/frida/droneview-menu/src/backend/jni_onload.cpp
 
 CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.i: cmake_force
@@ -257,7 +271,7 @@ CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.s: cmake_force
 CMakeFiles/droneview.dir/src/frontend/menu.cpp.o: CMakeFiles/droneview.dir/flags.make
 CMakeFiles/droneview.dir/src/frontend/menu.cpp.o: /data/data/com.termux/files/home/frida/droneview-menu/src/frontend/menu.cpp
 CMakeFiles/droneview.dir/src/frontend/menu.cpp.o: CMakeFiles/droneview.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/droneview.dir/src/frontend/menu.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/droneview.dir/src/frontend/menu.cpp.o"
 	/data/data/com.termux/files/usr/bin/clang++ --target=aarch64-linux-android23 --sysroot=/data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/droneview.dir/src/frontend/menu.cpp.o -MF CMakeFiles/droneview.dir/src/frontend/menu.cpp.o.d -o CMakeFiles/droneview.dir/src/frontend/menu.cpp.o -c /data/data/com.termux/files/home/frida/droneview-menu/src/frontend/menu.cpp
 
 CMakeFiles/droneview.dir/src/frontend/menu.cpp.i: cmake_force
@@ -278,6 +292,7 @@ droneview_OBJECTS = \
 "CMakeFiles/droneview.dir/src/app/il2cpp/il2cpp_helpers.cpp.o" \
 "CMakeFiles/droneview.dir/src/app/platform/platform_android.cpp.o" \
 "CMakeFiles/droneview.dir/src/backend/drone_backend.cpp.o" \
+"CMakeFiles/droneview.dir/src/backend/initial_check.cpp.o" \
 "CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o" \
 "CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o" \
 "CMakeFiles/droneview.dir/src/backend/runtime.cpp.o" \
@@ -296,6 +311,7 @@ libcstatic.so: CMakeFiles/droneview.dir/src/app/il2cpp/il2cpp_api.cpp.o
 libcstatic.so: CMakeFiles/droneview.dir/src/app/il2cpp/il2cpp_helpers.cpp.o
 libcstatic.so: CMakeFiles/droneview.dir/src/app/platform/platform_android.cpp.o
 libcstatic.so: CMakeFiles/droneview.dir/src/backend/drone_backend.cpp.o
+libcstatic.so: CMakeFiles/droneview.dir/src/backend/initial_check.cpp.o
 libcstatic.so: CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o
 libcstatic.so: CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o
 libcstatic.so: CMakeFiles/droneview.dir/src/backend/runtime.cpp.o
@@ -310,7 +326,7 @@ libcstatic.so: /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm
 libcstatic.so: /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++abi.a
 libcstatic.so: /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/aarch64/libunwind.a
 libcstatic.so: CMakeFiles/droneview.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Linking CXX shared library libcstatic.so"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Linking CXX shared library libcstatic.so"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/droneview.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

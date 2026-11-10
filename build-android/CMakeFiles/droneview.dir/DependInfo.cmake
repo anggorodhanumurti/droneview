@@ -17,6 +17,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/data/data/com.termux/files/home/frida/droneview-menu/src/app/platform/platform_android.cpp" "CMakeFiles/droneview.dir/src/app/platform/platform_android.cpp.o" "gcc" "CMakeFiles/droneview.dir/src/app/platform/platform_android.cpp.o.d"
   "/data/data/com.termux/files/home/frida/droneview-menu/src/backend/drone_backend.cpp" "CMakeFiles/droneview.dir/src/backend/drone_backend.cpp.o" "gcc" "CMakeFiles/droneview.dir/src/backend/drone_backend.cpp.o.d"
   "/data/data/com.termux/files/home/frida/droneview-menu/src/backend/entry.cpp" "CMakeFiles/droneview.dir/src/backend/entry.cpp.o" "gcc" "CMakeFiles/droneview.dir/src/backend/entry.cpp.o.d"
+  "/data/data/com.termux/files/home/frida/droneview-menu/src/backend/initial_check.cpp" "CMakeFiles/droneview.dir/src/backend/initial_check.cpp.o" "gcc" "CMakeFiles/droneview.dir/src/backend/initial_check.cpp.o.d"
   "/data/data/com.termux/files/home/frida/droneview-menu/src/backend/input_hook.cpp" "CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o" "gcc" "CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o.d"
   "/data/data/com.termux/files/home/frida/droneview-menu/src/backend/jni_onload.cpp" "CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o" "gcc" "CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o.d"
   "/data/data/com.termux/files/home/frida/droneview-menu/src/backend/overlay_hook.cpp" "CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o" "gcc" "CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o.d"

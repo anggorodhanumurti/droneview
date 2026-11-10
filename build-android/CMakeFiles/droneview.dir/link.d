@@ -9,6 +9,7 @@ libcstatic.so: \
  CMakeFiles/droneview.dir/src/app/il2cpp/il2cpp_helpers.cpp.o \
  CMakeFiles/droneview.dir/src/app/platform/platform_android.cpp.o \
  CMakeFiles/droneview.dir/src/backend/drone_backend.cpp.o \
+ CMakeFiles/droneview.dir/src/backend/initial_check.cpp.o \
  CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o \
  CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o \
  CMakeFiles/droneview.dir/src/backend/runtime.cpp.o \
@@ -48,6 +49,8 @@ CMakeFiles/droneview.dir/src/app/il2cpp/il2cpp_helpers.cpp.o:
 CMakeFiles/droneview.dir/src/app/platform/platform_android.cpp.o:
 
 CMakeFiles/droneview.dir/src/backend/drone_backend.cpp.o:
+
+CMakeFiles/droneview.dir/src/backend/initial_check.cpp.o:
 
 CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o:
 

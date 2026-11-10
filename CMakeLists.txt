@@ -67,6 +67,7 @@ add_library(droneview SHARED
     src/app/il2cpp/il2cpp_helpers.cpp
     src/app/platform/platform_android.cpp
     src/backend/drone_backend.cpp
+    src/backend/initial_check.cpp
     src/backend/overlay_hook.cpp
     src/backend/input_hook.cpp
     src/backend/runtime.cpp

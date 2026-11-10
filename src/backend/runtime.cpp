@@ -36,8 +36,9 @@ void frame() {
         return;
     }
     // Retry the Unity input hook every ~30 frames until the JNI slot is valid.
+    // Do not install any game hook before the initial checks pass.
     static int input_retry = 0;
-    if (input_retry-- <= 0) {
+    if (backend::initial_checks_passed() && input_retry-- <= 0) {
         input_retry = input::install() ? 1 << 30 : 30;
     }
     frontend::frame();

@@ -18,6 +18,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/droneview.dir/src/backend/drone_backend.cpp.o.d"
   "CMakeFiles/droneview.dir/src/backend/entry.cpp.o"
   "CMakeFiles/droneview.dir/src/backend/entry.cpp.o.d"
+  "CMakeFiles/droneview.dir/src/backend/initial_check.cpp.o"
+  "CMakeFiles/droneview.dir/src/backend/initial_check.cpp.o.d"
   "CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o"
   "CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o.d"
   "CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o"

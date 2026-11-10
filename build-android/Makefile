@@ -478,6 +478,30 @@ src/backend/entry.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/droneview.dir/build.make CMakeFiles/droneview.dir/src/backend/entry.cpp.s
 .PHONY : src/backend/entry.cpp.s
 
+src/backend/initial_check.o: src/backend/initial_check.cpp.o
+.PHONY : src/backend/initial_check.o
+
+# target to build an object file
+src/backend/initial_check.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/droneview.dir/build.make CMakeFiles/droneview.dir/src/backend/initial_check.cpp.o
+.PHONY : src/backend/initial_check.cpp.o
+
+src/backend/initial_check.i: src/backend/initial_check.cpp.i
+.PHONY : src/backend/initial_check.i
+
+# target to preprocess a source file
+src/backend/initial_check.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/droneview.dir/build.make CMakeFiles/droneview.dir/src/backend/initial_check.cpp.i
+.PHONY : src/backend/initial_check.cpp.i
+
+src/backend/initial_check.s: src/backend/initial_check.cpp.s
+.PHONY : src/backend/initial_check.s
+
+# target to generate assembly for a file
+src/backend/initial_check.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/droneview.dir/build.make CMakeFiles/droneview.dir/src/backend/initial_check.cpp.s
+.PHONY : src/backend/initial_check.cpp.s
+
 src/backend/input_hook.o: src/backend/input_hook.cpp.o
 .PHONY : src/backend/input_hook.o
 
@@ -650,6 +674,9 @@ help:
 	@echo "... src/backend/entry.o"
 	@echo "... src/backend/entry.i"
 	@echo "... src/backend/entry.s"
+	@echo "... src/backend/initial_check.o"
+	@echo "... src/backend/initial_check.i"
+	@echo "... src/backend/initial_check.s"
 	@echo "... src/backend/input_hook.o"
 	@echo "... src/backend/input_hook.i"
 	@echo "... src/backend/input_hook.s"

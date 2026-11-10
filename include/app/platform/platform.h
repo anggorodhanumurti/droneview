@@ -37,4 +37,9 @@ bool protect_memory(void* addr, std::size_t size, MemoryProtection prot);
 int api_level();
 std::uint64_t thread_id();
 
+// Process JavaVM, when the host process exposes one. Stored by JNI_OnLoad and
+// resolved lazily from JNI_GetCreatedJavaVMs otherwise.
+void set_java_vm(void* vm);
+void* java_vm();
+
 }  // namespace app::platform

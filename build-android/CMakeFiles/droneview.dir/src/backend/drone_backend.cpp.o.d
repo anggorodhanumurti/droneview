@@ -905,4 +905,5 @@ CMakeFiles/droneview.dir/src/backend/drone_backend.cpp.o: \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__tree \
   /data/data/com.termux/files/home/frida/droneview-menu/include/app/il2cpp/il2cpp_api.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/app/il2cpp/il2cpp_helpers.h \
-  /data/data/com.termux/files/home/frida/droneview-menu/include/app/platform/platform.h
+  /data/data/com.termux/files/home/frida/droneview-menu/include/app/platform/platform.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/src/backend/initial_check.h

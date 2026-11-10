@@ -8,6 +8,7 @@
 #include <sys/system_properties.h>
 #include <unistd.h>
 
+#include <atomic>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
@@ -16,6 +17,8 @@
 namespace app::platform {
 
 namespace {
+
+std::atomic<void*> g_java_vm{nullptr};
 
 int to_prot(MemoryProtection protection) {
     int prot = 0;
@@ -137,6 +140,49 @@ int api_level() {
 
 std::uint64_t thread_id() {
     return static_cast<std::uint64_t>(::syscall(SYS_gettid));
+}
+
+void set_java_vm(void* vm) {
+    g_java_vm.store(vm, std::memory_order_release);
+}
+
+void* java_vm() {
+    void* vm = g_java_vm.load(std::memory_order_acquire);
+    if (vm != nullptr) {
+        return vm;
+    }
+    // Loaders that inject the library natively may never call JNI_OnLoad.
+    // JNI_GetCreatedJavaVMs is exported by libnativehelper.so on Android.
+    using GetCreatedJavaVmsFn = int (*)(void**, int, int*);
+    auto resolve = []() -> GetCreatedJavaVmsFn {
+        auto fn = reinterpret_cast<GetCreatedJavaVmsFn>(
+            dlsym(RTLD_DEFAULT, "JNI_GetCreatedJavaVMs"));
+        if (fn != nullptr) {
+            return fn;
+        }
+        void* helper = dlopen("libnativehelper.so", RTLD_NOW);
+        if (helper == nullptr) {
+            return nullptr;
+        }
+        return reinterpret_cast<GetCreatedJavaVmsFn>(
+            dlsym(helper, "JNI_GetCreatedJavaVMs"));
+    };
+    static std::atomic<GetCreatedJavaVmsFn> cached{nullptr};
+    GetCreatedJavaVmsFn get_created = cached.load(std::memory_order_acquire);
+    if (get_created == nullptr) {
+        get_created = resolve();
+        if (get_created == nullptr) {
+            return nullptr;
+        }
+        cached.store(get_created, std::memory_order_release);
+    }
+    void* vms[1] = {};
+    int count = 0;
+    if (get_created(vms, 1, &count) != 0 || count < 1 || vms[0] == nullptr) {
+        return nullptr;
+    }
+    g_java_vm.store(vms[0], std::memory_order_release);
+    return vms[0];
 }
 
 }  // namespace app::platform

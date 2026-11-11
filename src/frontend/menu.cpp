@@ -30,9 +30,8 @@ constexpr float kFovPresets[] = {40.0f, 60.0f, 80.0f};
 float g_ui_scale = 1.4f;
 float g_font_scale = 1.0f;
 constexpr float kFontPixelSize = 18.0f;
+constexpr float kMenuWidth = 390.0f;
 bool g_collapsed = false;
-bool g_restore_expanded_size = false;
-ImVec2 g_expanded_size(390.0f, 240.0f);
 std::string g_ini_filename = "droneview.ini";
 std::string g_log_filename = "droneview_.txt";
 ImGuiStyle g_base_style;
@@ -101,33 +100,27 @@ void apply_touch_events() {
 
 void draw_menu() {
     const ImGuiStyle& style = ImGui::GetStyle();
-    const float titlebar_height =
-        ImGui::GetFrameHeight() + style.WindowPadding.y * 2.0f;
     // The menu is only interactive once the backend verified MLBB v2.2.16.
     const bool ui_enabled = dv::backend::initial_checks_passed();
 
     // Keep the status line visible while the version is unsupported.
     if (!ui_enabled && g_collapsed) {
         g_collapsed = false;
-        g_restore_expanded_size = true;
     }
 
-    if (g_collapsed) {
-        ImGui::SetNextWindowSize(ImVec2(g_expanded_size.x, titlebar_height),
-                                 ImGuiCond_Always);
-    } else if (g_restore_expanded_size) {
-        ImGui::SetNextWindowSize(g_expanded_size, ImGuiCond_Always);
-        g_restore_expanded_size = false;
-    } else {
-        ImGui::SetNextWindowSize(ImVec2(390.0f, 240.0f), ImGuiCond_FirstUseEver);
-    }
+    // Fixed width, height follows the content. This keeps the wrapped status
+    // line at the bottom visible instead of clipping it at a fixed height.
+    const float max_height = std::max(ImGui::GetIO().DisplaySize.y, 1.0f);
+    ImGui::SetNextWindowSizeConstraints(
+        ImVec2(kMenuWidth, 0.0f), ImVec2(kMenuWidth, max_height));
     ImGui::SetNextWindowPos(ImVec2(40.0f, 40.0f), ImGuiCond_FirstUseEver);
     // Collapse is handled by the custom title bar, never by ImGui's built-in
     // title-bar state (which is disabled by NoTitleBar).
     ImGui::SetNextWindowCollapsed(false, ImGuiCond_Always);
 
-    ImGuiWindowFlags flags =
-        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar |
+                             ImGuiWindowFlags_NoCollapse |
+                             ImGuiWindowFlags_AlwaysAutoResize;
     if (g_collapsed) {
         flags |= ImGuiWindowFlags_NoResize;
     }
@@ -168,10 +161,8 @@ void draw_menu() {
     if (toggle) {
         if (g_collapsed) {
             g_collapsed = false;
-            g_restore_expanded_size = true;
             expand_clicked = true;
         } else {
-            g_expanded_size = ImGui::GetWindowSize();
             g_collapsed = true;
         }
     }
@@ -190,7 +181,6 @@ void draw_menu() {
         ImGui::Separator();
         const std::string state = dv::backend::status();
         ImGui::TextWrapped("%s", state.c_str());
-        g_expanded_size = ImGui::GetWindowSize();
     }
 
     ImGui::End();

@@ -82,6 +82,7 @@ droneview: overlay hook installed: eglSwapBuffers @ ...
 droneview: IL2CPP from liblogic.so: merged 19/19
 droneview: ready: m_Camra=... show=... getFov=... setFov=...
 droneview: UI initialized; Drone View menu active
+droneview: input hook: nativeInjectEvent resolved from JNI table @ ...
 droneview: input hook installed: nativeInjectEvent @ ...
 droneview: drone enabled, original FOV ...
 ```
@@ -90,6 +91,14 @@ droneview: drone enabled, original FOV ...
 
 - ARM64 only. A 32-bit Multispace plugin process will ignore
   `lib/arm64-v8a/`.
-- The input hook slot (`libunity + 0x1888f60`) is validated before hooking; if
-  it does not point inside `libunity`, input is skipped (menu still renders).
+- `nativeInjectEvent` is resolved from libunity's JNINativeMethod table by
+  matching the `nativeInjectEvent` name, the
+  `(Landroid/view/InputEvent;)Z` signature, and an executable target inside
+  `libunity`. The legacy `libunity + 0x1888f60` slot is only a fallback; if
+  neither resolves, input is skipped (menu still renders).
 - If the game resets FOV every frame, the frame loop re-applies it.
+- The overlay tracks the EGL context used by ImGui. If the game recreates its
+  context (for example after background/foreground), the overlay releases the
+  old ImGui context and reinitializes on the new one.
+- `dv_stop` disables the overlay and prevents reinitialization. The
+  `eglSwapBuffers` hook stays installed and forwards swaps to the original.

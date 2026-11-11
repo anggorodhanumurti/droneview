@@ -1,9 +1,12 @@
 #include "input_hook.h"
 
+#include <algorithm>
 #include <atomic>
+#include <cstring>
 #include <mutex>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "app/elf/elf_module.h"
 #include "app/hooks/hook_engine.h"
@@ -11,7 +14,9 @@
 #include "droneview/frontend.h"
 
 #if APP_PLATFORM_ANDROID
+#include <elf.h>
 #include <jni.h>
+#include <link.h>
 
 #include "imgui.h"
 #endif
@@ -23,6 +28,9 @@ std::mutex g_mutex;
 bool g_installed = false;
 bool g_failure_logged = false;
 app::uptr g_last_target = 0;
+bool g_table_lookup_done = false;
+app::uptr g_table_target = 0;
+app::uptr g_legacy_target = 0;
 
 #if APP_PLATFORM_ANDROID
 using InjectEventFn = jboolean (*)(JNIEnv*, jobject, jobject);
@@ -124,6 +132,254 @@ jboolean input_replacement(JNIEnv* env, jobject thiz, jobject event) {
     }
     return JNI_FALSE;
 }
+
+struct UnitySegment {
+    app::uptr start = 0;
+    app::uptr end = 0;
+    std::uint32_t flags = 0;
+};
+
+struct UnityModule {
+    std::string path;
+    std::vector<UnitySegment> segments;
+    bool found = false;
+};
+
+int collect_unity_segments_callback(struct dl_phdr_info* info, std::size_t, void* data) {
+    auto* module = static_cast<UnityModule*>(data);
+    if (module == nullptr || info == nullptr || info->dlpi_name == nullptr ||
+        info->dlpi_phdr == nullptr || info->dlpi_phnum <= 0) {
+        return 0;
+    }
+    const std::string path(info->dlpi_name);
+    const auto slash = path.find_last_of('/');
+    const std::string basename =
+        slash == std::string::npos ? path : path.substr(slash + 1);
+    if (basename != "libunity.so" && path.find("libunity.so") == std::string::npos) {
+        return 0;
+    }
+    module->path = path;
+    for (int i = 0; i < info->dlpi_phnum; ++i) {
+        const auto& phdr = info->dlpi_phdr[i];
+        if (phdr.p_type != PT_LOAD) {
+            continue;
+        }
+        UnitySegment segment;
+        segment.start = static_cast<app::uptr>(info->dlpi_addr) + phdr.p_vaddr;
+        segment.end = segment.start + phdr.p_memsz;
+        segment.flags = phdr.p_flags;
+        if (segment.end > segment.start) {
+            module->segments.push_back(segment);
+        }
+    }
+    module->found = !module->segments.empty();
+    return module->found ? 1 : 0;
+}
+
+const UnitySegment* find_unity_segment(const std::vector<UnitySegment>& segments,
+                                       app::uptr address, std::size_t size) {
+    if (size == 0) {
+        return nullptr;
+    }
+    for (const auto& segment : segments) {
+        if (address >= segment.start && address <= segment.end &&
+            size <= static_cast<std::size_t>(segment.end - address)) {
+            return &segment;
+        }
+    }
+    return nullptr;
+}
+
+bool read_unity_cstring(const std::vector<UnitySegment>& segments,
+                        app::uptr address, std::string* value) {
+    if (value == nullptr) {
+        return false;
+    }
+    const UnitySegment* segment = find_unity_segment(segments, address, 1);
+    if (segment == nullptr || (segment->flags & PF_R) == 0) {
+        return false;
+    }
+    const char* bytes = reinterpret_cast<const char*>(address);
+    const std::size_t available = static_cast<std::size_t>(segment->end - address);
+    const std::size_t limit = std::min<std::size_t>(available, 512);
+    for (std::size_t i = 0; i < limit; ++i) {
+        if (bytes[i] == '\0') {
+            value->assign(bytes, i);
+            return true;
+        }
+    }
+    return false;
+}
+
+std::vector<app::uptr> find_unity_cstring(const std::vector<UnitySegment>& segments,
+                                          const char* needle) {
+    std::vector<app::uptr> matches;
+    if (needle == nullptr || *needle == '\0') {
+        return matches;
+    }
+    const std::size_t needle_size = std::strlen(needle);
+    // Prefer data/rodata; fall back to every readable segment if needed.
+    for (int pass = 0; pass < 2 && matches.empty(); ++pass) {
+        for (const auto& segment : segments) {
+            if ((segment.flags & PF_R) == 0) {
+                continue;
+            }
+            if (pass == 0 && (segment.flags & PF_X) != 0) {
+                continue;
+            }
+            const std::size_t size =
+                static_cast<std::size_t>(segment.end - segment.start);
+            if (size < needle_size + 1) {
+                continue;
+            }
+            const char* bytes = reinterpret_cast<const char*>(segment.start);
+            for (std::size_t i = 0; i + needle_size < size; ++i) {
+                if (bytes[i] != needle[0]) {
+                    continue;
+                }
+                if (std::memcmp(bytes + i, needle, needle_size) == 0 &&
+                    bytes[i + needle_size] == '\0') {
+                    matches.push_back(segment.start + i);
+                    if (matches.size() >= 32) {
+                        return matches;
+                    }
+                }
+            }
+        }
+    }
+    return matches;
+}
+
+struct NativeMethodEntry {
+    app::uptr entry = 0;
+    app::uptr target = 0;
+    std::string signature;
+};
+
+std::vector<NativeMethodEntry> find_native_method_entries(
+    const std::vector<UnitySegment>& segments,
+    std::vector<app::uptr> name_addresses) {
+    std::vector<NativeMethodEntry> entries;
+    constexpr char kSignature[] = "(Landroid/view/InputEvent;)Z";
+    const std::size_t pointer_size = sizeof(app::uptr);
+    const std::size_t entry_size = 3 * pointer_size;
+    const app::uptr alignment_mask = static_cast<app::uptr>(pointer_size) - 1;
+
+    std::sort(name_addresses.begin(), name_addresses.end());
+    for (const auto& segment : segments) {
+        if ((segment.flags & PF_R) == 0 || (segment.flags & PF_X) != 0) {
+            continue;
+        }
+        app::uptr address = (segment.start + alignment_mask) & ~alignment_mask;
+        for (; address + entry_size <= segment.end; address += pointer_size) {
+            const app::uptr name = *reinterpret_cast<const app::uptr*>(address);
+            if (!std::binary_search(name_addresses.begin(), name_addresses.end(),
+                                    name)) {
+                continue;
+            }
+            const app::uptr signature_address =
+                *reinterpret_cast<const app::uptr*>(address + pointer_size);
+            std::string signature;
+            if (!read_unity_cstring(segments, signature_address, &signature) ||
+                signature != kSignature) {
+                continue;
+            }
+            const app::uptr target =
+                *reinterpret_cast<const app::uptr*>(address + 2 * pointer_size);
+            const UnitySegment* target_segment =
+                find_unity_segment(segments, target, 1);
+            if (target_segment == nullptr || (target_segment->flags & PF_X) == 0) {
+                continue;
+            }
+            entries.push_back(NativeMethodEntry{address, target, signature});
+            if (entries.size() >= 8) {
+                return entries;
+            }
+        }
+    }
+    return entries;
+}
+
+app::uptr resolve_from_jni_table() {
+    UnityModule module;
+    dl_iterate_phdr(collect_unity_segments_callback, &module);
+    if (!module.found) {
+        return 0;
+    }
+    const std::vector<app::uptr> names =
+        find_unity_cstring(module.segments, "nativeInjectEvent");
+    if (names.empty()) {
+        app::platform::log_info(
+            "droneview", "input hook: nativeInjectEvent string not found in libunity");
+        return 0;
+    }
+    const std::vector<NativeMethodEntry> entries =
+        find_native_method_entries(module.segments, names);
+    if (entries.empty()) {
+        app::platform::log_info(
+            "droneview", "input hook: nativeInjectEvent JNI table entry not found");
+        return 0;
+    }
+    for (const auto& entry : entries) {
+        app::platform::log_info(
+            "droneview",
+            "input hook: JNI table candidate entry=0x%lx target=0x%lx signature='%s'",
+            static_cast<unsigned long>(entry.entry),
+            static_cast<unsigned long>(entry.target), entry.signature.c_str());
+    }
+    return entries.front().target;
+}
+
+app::uptr resolve_from_legacy_slot(app::uptr libunity) {
+    constexpr app::uptr kSlot = 0x1888f60;
+    app::elf::ElfModule unity;
+    std::optional<app::elf::ElfModule::MemoryRange> range;
+    if (unity.open("libunity.so")) {
+        range = unity.memory_range();
+    }
+    const app::uptr slot_address = libunity + kSlot;
+    if (!range || slot_address < range->start ||
+        slot_address + sizeof(app::uptr) > range->start + range->size) {
+        if (!g_failure_logged) {
+            app::platform::log_error(
+                "droneview",
+                "input hook: legacy slot 0x%lx outside libunity mapping (range=%s) tid=%llu",
+                static_cast<unsigned long>(slot_address),
+                range ? "known" : "unknown",
+                static_cast<unsigned long long>(app::platform::thread_id()));
+            g_failure_logged = true;
+        }
+        return 0;
+    }
+    const app::uptr target = *reinterpret_cast<app::uptr*>(slot_address);
+    if (target == 0) {
+        if (!g_failure_logged) {
+            app::platform::log_error("droneview",
+                                     "input hook: legacy slot empty");
+            g_failure_logged = true;
+        }
+        return 0;
+    }
+    const std::string target_path =
+        app::platform::module_path(reinterpret_cast<const void*>(target));
+    if (target_path.find("libunity") == std::string::npos) {
+        if (!g_failure_logged) {
+            app::platform::log_error(
+                "droneview",
+                "input hook: legacy slot 0x%lx -> 0x%lx outside libunity (path='%s'); skipping",
+                static_cast<unsigned long>(slot_address),
+                static_cast<unsigned long>(target), target_path.c_str());
+            g_failure_logged = true;
+        }
+        return 0;
+    }
+    app::platform::log_info(
+        "droneview", "input hook: legacy slot 0x%lx -> 0x%lx path='%s' tid=%llu",
+        static_cast<unsigned long>(slot_address),
+        static_cast<unsigned long>(target), target_path.c_str(),
+        static_cast<unsigned long long>(app::platform::thread_id()));
+    return target;
+}
 #endif
 
 }  // namespace
@@ -138,51 +394,40 @@ bool install() {
     if (libunity == 0) {
         return false;
     }
-    // JNINativeMethod table entry for nativeInjectEvent in the target Unity
-    // build. Validate that the slot is mapped inside libunity before reading:
-    // an offset from a different build can otherwise fault.
-    constexpr app::uptr kSlot = 0x1888f60;
-    app::elf::ElfModule unity;
-    std::optional<app::elf::ElfModule::MemoryRange> range;
-    if (unity.open("libunity.so")) {
-        range = unity.memory_range();
-    }
-    const app::uptr slot_address = libunity + kSlot;
-    if (!range || slot_address < range->start ||
-        slot_address + sizeof(app::uptr) > range->start + range->size) {
-        if (!g_failure_logged) {
-            app::platform::log_error(
+
+    if (!g_table_lookup_done) {
+        g_table_lookup_done = true;
+        g_table_target = resolve_from_jni_table();
+        if (g_table_target != 0) {
+            app::platform::log_info(
                 "droneview",
-                "input hook: slot 0x%lx outside libunity mapping (range=%s) tid=%llu",
-                static_cast<unsigned long>(slot_address),
-                range ? "known" : "unknown",
-                static_cast<unsigned long long>(app::platform::thread_id()));
-            g_failure_logged = true;
+                "input hook: nativeInjectEvent resolved from JNI table @ 0x%lx",
+                static_cast<unsigned long>(g_table_target));
+        } else {
+            app::platform::log_info(
+                "droneview",
+                "input hook: JNI table lookup failed; trying legacy slot");
         }
-        return false;
     }
-    const app::uptr target = *reinterpret_cast<app::uptr*>(slot_address);
+
+    app::uptr target = g_table_target;
     if (target == 0) {
-        if (!g_failure_logged) {
-            app::platform::log_error("droneview",
-                                     "input hook: nativeInjectEvent slot empty");
-            g_failure_logged = true;
+        if (g_legacy_target == 0) {
+            g_legacy_target = resolve_from_legacy_slot(libunity);
         }
+        target = g_legacy_target;
+    }
+    if (target == 0) {
         return false;
     }
+
     const std::string target_path =
         app::platform::module_path(reinterpret_cast<const void*>(target));
-    app::platform::log_info(
-        "droneview", "input hook: slot=0x%lx target=0x%lx path='%s' tid=%llu",
-        static_cast<unsigned long>(slot_address),
-        static_cast<unsigned long>(target), target_path.c_str(),
-        static_cast<unsigned long long>(app::platform::thread_id()));
     if (target_path.find("libunity") == std::string::npos) {
         if (!g_failure_logged) {
             app::platform::log_error(
                 "droneview",
-                "input hook: slot 0x%lx -> 0x%lx outside libunity (path='%s'); skipping",
-                static_cast<unsigned long>(libunity + kSlot),
+                "input hook: resolved target 0x%lx outside libunity (path='%s'); skipping",
                 static_cast<unsigned long>(target), target_path.c_str());
             g_failure_logged = true;
         }

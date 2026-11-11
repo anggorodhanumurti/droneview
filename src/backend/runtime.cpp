@@ -17,17 +17,22 @@ std::atomic<bool> g_initialized{false};
 }  // namespace
 
 bool ensure_ui() {
-    if (g_initialized.load(std::memory_order_acquire)) {
+    const bool runtime_ready = g_initialized.load(std::memory_order_acquire);
+    if (runtime_ready && frontend::initialized()) {
         return true;
     }
     if (!frontend::initialize("droneview.ini", "droneview_.txt")) {
         app::platform::log_error(kTag, "frontend init failed");
         return false;
     }
-    // Resolution runs on its own worker; this returns immediately.
-    backend::initialize();
-    g_initialized.store(true, std::memory_order_release);
-    app::platform::log_info(kTag, "UI initialized; Drone View menu active");
+    if (!runtime_ready) {
+        // Resolution runs on its own worker; this returns immediately.
+        backend::initialize();
+        g_initialized.store(true, std::memory_order_release);
+        app::platform::log_info(kTag, "UI initialized; Drone View menu active");
+    } else {
+        app::platform::log_info(kTag, "UI reinitialized for new EGL context");
+    }
     return true;
 }
 
@@ -49,11 +54,11 @@ bool ui_ready() {
 }
 
 void shutdown() {
+    // Disable the overlay path even if the UI never finished initializing.
+    dv::overlay::shutdown();
     if (!g_initialized.load(std::memory_order_acquire)) {
         return;
     }
-    // Stop the swap hook before destroying the ImGui context/GL resources.
-    dv::overlay::shutdown();
     backend::shutdown();
     frontend::shutdown();
     g_initialized.store(false, std::memory_order_release);

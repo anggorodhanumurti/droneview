@@ -302,6 +302,25 @@ void shutdown() {
     }
 }
 
+void reset_for_context_loss() {
+    if (!g_initialized.exchange(false, std::memory_order_acq_rel)) {
+        return;
+    }
+    // The old EGL context is gone, so GL deletion is invalid here. The
+    // backend's GL objects leak with that context; this is safer than issuing
+    // GL calls in the new context.
+    ImGui::DestroyContext();
+    g_touch_active = false;
+    {
+        std::lock_guard<std::mutex> lock(g_touch_mutex);
+        g_touch_events.clear();
+    }
+    {
+        std::lock_guard<std::mutex> lock(g_rect_mutex);
+        g_menu_rect_valid = false;
+    }
+}
+
 bool touch_captures(float x, float y) {
     std::lock_guard<std::mutex> lock(g_rect_mutex);
     return g_menu_rect_valid && x >= g_menu_x && y >= g_menu_y &&

@@ -15,6 +15,10 @@ void frame();
 
 void shutdown();
 
+// Releases the ImGui context when the previous EGL context is gone. Makes no
+// GL calls; the next initialize() creates fresh objects in the new context.
+void reset_for_context_loss();
+
 bool touch_captures(float x, float y);
 void queue_touch(float x, float y, int action);
 

@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <mutex>
+#include <thread>
 
 #include "app/elf/elf_module.h"
 #include "app/hooks/hook_engine.h"
@@ -16,29 +17,27 @@ namespace dv::overlay {
 namespace {
 
 std::mutex g_install_mutex;
+std::mutex g_ui_mutex;
 bool g_installed = false;
 bool g_failure_logged = false;
 
 using EglSwapBuffersFn = EGLBoolean (*)(EGLDisplay, EGLSurface);
-EglSwapBuffersFn g_original_swap = nullptr;
+std::atomic<EglSwapBuffersFn> g_original_swap{nullptr};
+std::atomic<bool> g_original_wait_logged{false};
 std::atomic<bool> g_ui_ready{false};
-std::atomic<bool> g_ui_initializing{false};
+std::atomic<bool> g_disabled{false};
 std::atomic<int> g_ui_retry_frames{0};
+EGLContext g_ui_context = EGL_NO_CONTEXT;
 
 const char* safe_gl_string(GLenum name) {
     return reinterpret_cast<const char*>(glGetString(name));
 }
 
-void ensure_ui() {
-    if (g_ui_ready.load(std::memory_order_acquire)) {
+void ensure_ui_locked() {
+    if (g_disabled.load(std::memory_order_acquire)) {
         return;
     }
-    // A failed init is retried later; the first swap can happen before the GL
-    // context is fully usable.
-    if (g_ui_retry_frames.load(std::memory_order_relaxed) > 0) {
-        g_ui_retry_frames.fetch_sub(1, std::memory_order_relaxed);
-        return;
-    }
+
     const EGLContext context = eglGetCurrentContext();
     if (context == EGL_NO_CONTEXT) {
         g_ui_retry_frames.store(120, std::memory_order_relaxed);
@@ -48,15 +47,43 @@ void ensure_ui() {
             static_cast<unsigned long long>(app::platform::thread_id()));
         return;
     }
-    bool expected = false;
-    if (!g_ui_initializing.compare_exchange_strong(expected, true,
-                                                   std::memory_order_acq_rel)) {
+
+    const EGLSurface draw_surface = eglGetCurrentSurface(EGL_DRAW);
+    if (draw_surface == EGL_NO_SURFACE) {
+        g_ui_retry_frames.store(120, std::memory_order_relaxed);
+        app::platform::log_error(
+            "droneview",
+            "overlay: no current EGL surface on swap thread (tid=%llu)",
+            static_cast<unsigned long long>(app::platform::thread_id()));
         return;
     }
-    const EGLSurface draw_surface = eglGetCurrentSurface(EGL_DRAW);
+
+    if (g_ui_ready.load(std::memory_order_acquire)) {
+        if (g_ui_context == context) {
+            return;
+        }
+        // The game destroyed and recreated its EGL context. ImGui's GL objects
+        // belong to the old context; release the CPU-side context without
+        // touching GL and recreate it on the new context below.
+        g_ui_ready.store(false, std::memory_order_release);
+        g_ui_retry_frames.store(0, std::memory_order_relaxed);
+        dv::frontend::reset_for_context_loss();
+        app::platform::log_info(
+            "droneview", "overlay: EGL context changed; reinitializing (tid=%llu)",
+            static_cast<unsigned long long>(app::platform::thread_id()));
+    }
+
+    // A failed init is retried later; the first swap can happen before the GL
+    // context is fully usable.
+    if (g_ui_retry_frames.load(std::memory_order_relaxed) > 0) {
+        g_ui_retry_frames.fetch_sub(1, std::memory_order_relaxed);
+        return;
+    }
+
     const char* gl_version = safe_gl_string(GL_VERSION);
     const char* gl_renderer = safe_gl_string(GL_RENDERER);
     if (dv::runtime::ensure_ui()) {
+        g_ui_context = context;
         g_ui_ready.store(true, std::memory_order_release);
         app::platform::log_info(
             "droneview",
@@ -72,25 +99,46 @@ void ensure_ui() {
             static_cast<unsigned long long>(app::platform::thread_id()),
             reinterpret_cast<void*>(context), gl_version != nullptr ? gl_version : "?");
     }
-    g_ui_initializing.store(false, std::memory_order_release);
 }
 
 EGLBoolean overlay_swap(EGLDisplay display, EGLSurface surface) {
-    ensure_ui();
-    if (g_ui_ready.load(std::memory_order_acquire) && dv::runtime::ui_ready() &&
-        eglGetCurrentContext() != EGL_NO_CONTEXT) {
-        EGLint width = 0;
-        EGLint height = 0;
-        if (eglQuerySurface(display, surface, EGL_WIDTH, &width) == EGL_TRUE &&
-            eglQuerySurface(display, surface, EGL_HEIGHT, &height) == EGL_TRUE) {
-            dv::frontend::set_display_size(width, height);
+    EglSwapBuffersFn original = g_original_swap.load(std::memory_order_acquire);
+    if (original == nullptr) {
+        // Dobby/GlossHook makes the hook live before install() publishes the
+        // trampoline. Spin briefly instead of dropping the frame.
+        for (int i = 0; i < 4096 && original == nullptr; ++i) {
+            std::this_thread::yield();
+            original = g_original_swap.load(std::memory_order_acquire);
         }
-        dv::runtime::frame();
+        if (original == nullptr) {
+            if (!g_original_wait_logged.exchange(true, std::memory_order_acq_rel)) {
+                app::platform::log_error(
+                    "droneview",
+                    "overlay: original eglSwapBuffers not published yet (tid=%llu)",
+                    static_cast<unsigned long long>(app::platform::thread_id()));
+            }
+            return EGL_FALSE;
+        }
+        g_original_wait_logged.store(false, std::memory_order_release);
     }
-    if (g_original_swap == nullptr) {
-        return EGL_FALSE;
+
+    std::lock_guard<std::mutex> lock(g_ui_mutex);
+    if (!g_disabled.load(std::memory_order_acquire)) {
+        ensure_ui_locked();
+        const EGLContext current = eglGetCurrentContext();
+        if (g_ui_ready.load(std::memory_order_acquire) &&
+            dv::runtime::ui_ready() && current != EGL_NO_CONTEXT &&
+            current == g_ui_context) {
+            EGLint width = 0;
+            EGLint height = 0;
+            if (eglQuerySurface(display, surface, EGL_WIDTH, &width) == EGL_TRUE &&
+                eglQuerySurface(display, surface, EGL_HEIGHT, &height) == EGL_TRUE) {
+                dv::frontend::set_display_size(width, height);
+            }
+            dv::runtime::frame();
+        }
     }
-    return g_original_swap(display, surface);
+    return original(display, surface);
 }
 
 }  // namespace
@@ -130,7 +178,18 @@ bool install() {
         }
         return false;
     }
-    g_original_swap = reinterpret_cast<EglSwapBuffersFn>(result.original);
+    if (result.original == nullptr) {
+        if (!g_failure_logged) {
+            app::platform::log_error(
+                "droneview",
+                "overlay: hook returned no original eglSwapBuffers (retrying)");
+            g_failure_logged = true;
+        }
+        return false;
+    }
+    g_original_swap.store(reinterpret_cast<EglSwapBuffersFn>(result.original),
+                          std::memory_order_release);
+    g_original_wait_logged.store(false, std::memory_order_release);
     g_installed = true;
     g_failure_logged = false;
     app::platform::log_info("droneview",
@@ -145,10 +204,11 @@ bool installed() {
 }
 
 void shutdown() {
-    std::lock_guard<std::mutex> lock(g_install_mutex);
+    std::lock_guard<std::mutex> lock(g_ui_mutex);
+    g_disabled.store(true, std::memory_order_release);
     g_ui_ready.store(false, std::memory_order_release);
-    g_ui_initializing.store(false, std::memory_order_relaxed);
     g_ui_retry_frames.store(0, std::memory_order_relaxed);
+    g_ui_context = EGL_NO_CONTEXT;
 }
 
 }  // namespace dv::overlay

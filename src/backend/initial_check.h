@@ -19,7 +19,7 @@ struct Result {
 
 // One non-blocking preparation attempt. Runs before any game hooking:
 //   1. read the installed application versionName,
-//   2. require MLBB v2.2.16,
+//   2. require MLBB v2.2.23 or v2.2.16,
 //   3. require at least one native IL2CPP game library to be loaded.
 Result run();
 

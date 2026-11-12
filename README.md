@@ -61,7 +61,7 @@ build-android/libcstatic.so
 
 ## How to Install
 
-1. This mod only support MLBB v2.2.16, get it here: [MLBB 2.2.16](https://t0pgamemurah.xyz/downloads/MLBB_2.2.16.12322.zip)
+1. This mod supports MLBB v2.2.23 and v2.2.16.
 2. Download latest Release APK from the [latest Release](https://github.com/anggorodhanumurti/droneview/releases/latest) page.
 3. Extract and Install Apk inside those zip files
 4. Clone MLBB and Launch MLBB from inside Meta+ Evolution Space

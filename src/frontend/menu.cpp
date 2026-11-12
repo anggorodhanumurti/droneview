@@ -100,7 +100,7 @@ void apply_touch_events() {
 
 void draw_menu() {
     const ImGuiStyle& style = ImGui::GetStyle();
-    // The menu is only interactive once the backend verified MLBB v2.2.16.
+    // The menu is only interactive once the backend verified MLBB v2.2.23 or v2.2.16.
     const bool ui_enabled = dv::backend::initial_checks_passed();
 
     // Keep the status line visible while the version is unsupported.

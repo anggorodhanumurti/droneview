@@ -10,7 +10,7 @@ namespace dv::initial_check {
 
 namespace {
 
-constexpr std::string_view kSupportedVersion = "2.2.16";
+constexpr std::string_view kSupportedVersions[] = {"2.2.23", "2.2.16"};
 
 // MLBB exposes the native IL2CPP runtime through these libraries. They appear
 // in this order during startup; any one of them means the game has begun
@@ -226,23 +226,28 @@ bool any_game_library_loaded() {
 }
 
 bool is_supported_version(std::string_view version) {
-    if (version.size() < kSupportedVersion.size()) {
-        return false;
+    for (const std::string_view supported : kSupportedVersions) {
+        if (version.size() < supported.size()) {
+            continue;
+        }
+        if (version.compare(0, supported.size(), supported) != 0) {
+            continue;
+        }
+        if (version.size() == supported.size()) {
+            return true;
+        }
+        const char next = version[supported.size()];
+        if (next == '.' || next == '-' || next == '_' || next == ' ') {
+            return true;
+        }
     }
-    if (version.compare(0, kSupportedVersion.size(), kSupportedVersion) != 0) {
-        return false;
-    }
-    if (version.size() == kSupportedVersion.size()) {
-        return true;
-    }
-    const char next = version[kSupportedVersion.size()];
-    return next == '.' || next == '-' || next == '_' || next == ' ';
+    return false;
 }
 
 std::string unsupported_version_status(const std::string& version) {
     const std::string detected = version.empty() ? "unknown" : version;
     return "Not Ready: " + detected +
-           " is not supported! please download MLBB v2.2.16";
+           " is not supported! please use MLBB v2.2.23 or v2.2.16";
 }
 
 Result run() {

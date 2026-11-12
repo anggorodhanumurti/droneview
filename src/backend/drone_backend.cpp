@@ -250,7 +250,7 @@ bool resolve_once(int attempt) {
 }
 
 // Initial check phase: no game hooking or IL2CPP access happens until the
-// installed build is v2.2.16 and one of the native game libraries is loaded.
+// installed build is v2.2.23 or v2.2.16 and one of the native game libraries is loaded.
 void worker_main() {
     bool checks_passed = false;
     while (!g_stop.load(std::memory_order_acquire)) {
@@ -266,7 +266,7 @@ void worker_main() {
                     check.version));
                 app::platform::log_error(
                     kTag,
-                    "unsupported MLBB version '%s' (expected 2.2.16); "
+                    "unsupported MLBB version '%s' (expected 2.2.23 or 2.2.16); "
                     "disabling menu",
                     check.version.c_str());
                 return;

@@ -2,9 +2,13 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cmath>
+#include <cstdint>
 #include <deque>
 #include <mutex>
 #include <string>
+
+#include <GLES3/gl3.h>
 
 #include "app/platform/platform.h"
 #include "droneview/backend.h"
@@ -13,6 +17,7 @@
 #include "backends/imgui_impl_opengl3.h"
 
 #include "droidsans_ttf.inc"
+#include "icon_rgba.inc"
 
 namespace dv::frontend {
 namespace {
@@ -31,7 +36,21 @@ float g_ui_scale = 1.4f;
 float g_font_scale = 1.0f;
 constexpr float kFontPixelSize = 18.0f;
 constexpr float kMenuWidth = 390.0f;
+constexpr float kIconDisplaySize = 64.0f;
+constexpr float kIconDragThreshold = 4.0f;
 bool g_collapsed = false;
+bool g_restore_position = false;
+float g_restore_x = 0.0f;
+float g_restore_y = 0.0f;
+bool g_icon_position_valid = false;
+float g_icon_x = 40.0f;
+float g_icon_y = 40.0f;
+bool g_icon_drag_moved = false;
+float g_icon_drag_start_x = 0.0f;
+float g_icon_drag_start_y = 0.0f;
+float g_icon_window_start_x = 0.0f;
+float g_icon_window_start_y = 0.0f;
+GLuint g_icon_texture = 0;
 std::string g_ini_filename = "droneview.ini";
 std::string g_log_filename = "droneview_.txt";
 ImGuiStyle g_base_style;
@@ -98,6 +117,39 @@ void apply_touch_events() {
     }
 }
 
+void create_icon_texture() {
+    if (g_icon_texture != 0) {
+        return;
+    }
+    if (kIconRgbaLen != static_cast<unsigned int>(kIconWidth * kIconHeight * 4)) {
+        app::platform::log_error("droneview", "icon: invalid RGBA size");
+        return;
+    }
+    glGenTextures(1, &g_icon_texture);
+    if (g_icon_texture == 0) {
+        app::platform::log_error("droneview", "icon: glGenTextures failed");
+        return;
+    }
+    glBindTexture(GL_TEXTURE_2D, g_icon_texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, kIconWidth, kIconHeight, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, kIconRgba);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    app::platform::log_info("droneview", "icon texture created: %dx%d",
+                            kIconWidth, kIconHeight);
+}
+
+void destroy_icon_texture() {
+    if (g_icon_texture != 0) {
+        glDeleteTextures(1, &g_icon_texture);
+        g_icon_texture = 0;
+    }
+}
+
 void draw_menu() {
     const ImGuiStyle& style = ImGui::GetStyle();
     // The menu is only interactive once the backend verified MLBB v2.2.23 or v2.2.16.
@@ -107,13 +159,100 @@ void draw_menu() {
     if (!ui_enabled && g_collapsed) {
         g_collapsed = false;
     }
+    // Never hide the menu behind an icon that could not be created.
+    if (g_collapsed && g_icon_texture == 0) {
+        g_collapsed = false;
+    }
+
+    if (g_collapsed) {
+        if (!g_icon_position_valid) {
+            g_icon_x = 40.0f;
+            g_icon_y = 40.0f;
+        }
+        const ImVec2 display = ImGui::GetIO().DisplaySize;
+        g_icon_x = std::max(0.0f, std::min(g_icon_x, display.x - kIconDisplaySize));
+        g_icon_y = std::max(0.0f, std::min(g_icon_y, display.y - kIconDisplaySize));
+
+        ImGui::SetNextWindowPos(ImVec2(g_icon_x, g_icon_y), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(kIconDisplaySize, kIconDisplaySize),
+                                 ImGuiCond_Always);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        const ImGuiWindowFlags icon_flags =
+            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
+            ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground |
+            ImGuiWindowFlags_NoSavedSettings;
+        if (ImGui::Begin("##droneview_icon", nullptr, icon_flags)) {
+            const ImVec2 icon_min = ImGui::GetCursorScreenPos();
+            ImGui::InvisibleButton("##droneview_icon_button",
+                                   ImVec2(kIconDisplaySize, kIconDisplaySize));
+            const ImVec2 icon_max(icon_min.x + kIconDisplaySize,
+                                  icon_min.y + kIconDisplaySize);
+            ImGui::GetWindowDrawList()->AddImage(
+                reinterpret_cast<ImTextureID>(static_cast<intptr_t>(g_icon_texture)),
+                icon_min, icon_max);
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+            }
+
+            if (ImGui::IsItemActivated()) {
+                const ImVec2 mouse = ImGui::GetIO().MousePos;
+                const ImVec2 window = ImGui::GetWindowPos();
+                g_icon_drag_start_x = mouse.x;
+                g_icon_drag_start_y = mouse.y;
+                g_icon_window_start_x = window.x;
+                g_icon_window_start_y = window.y;
+                g_icon_drag_moved = false;
+            }
+            if (ImGui::IsItemActive()) {
+                const ImVec2 mouse = ImGui::GetIO().MousePos;
+                const float dx = mouse.x - g_icon_drag_start_x;
+                const float dy = mouse.y - g_icon_drag_start_y;
+                if (!g_icon_drag_moved &&
+                    (std::fabs(dx) > kIconDragThreshold ||
+                     std::fabs(dy) > kIconDragThreshold)) {
+                    g_icon_drag_moved = true;
+                }
+                if (g_icon_drag_moved) {
+                    g_icon_x = g_icon_window_start_x + dx;
+                    g_icon_y = g_icon_window_start_y + dy;
+                    const ImVec2 drag_display = ImGui::GetIO().DisplaySize;
+                    g_icon_x = std::max(
+                        0.0f, std::min(g_icon_x, drag_display.x - kIconDisplaySize));
+                    g_icon_y = std::max(
+                        0.0f, std::min(g_icon_y, drag_display.y - kIconDisplaySize));
+                    ImGui::SetWindowPos(ImVec2(g_icon_x, g_icon_y));
+                }
+            }
+            if (ImGui::IsItemDeactivated()) {
+                if (!g_icon_drag_moved) {
+                    g_collapsed = false;
+                    g_restore_position = true;
+                    g_restore_x = g_icon_x;
+                    g_restore_y = g_icon_y;
+                }
+                g_icon_drag_moved = false;
+            }
+            record_menu_rect();
+        }
+        ImGui::End();
+        ImGui::PopStyleVar(2);
+        return;
+    }
 
     // Fixed width, height follows the content. This keeps the wrapped status
     // line at the bottom visible instead of clipping it at a fixed height.
     const float max_height = std::max(ImGui::GetIO().DisplaySize.y, 1.0f);
     ImGui::SetNextWindowSizeConstraints(
         ImVec2(kMenuWidth, 0.0f), ImVec2(kMenuWidth, max_height));
-    ImGui::SetNextWindowPos(ImVec2(40.0f, 40.0f), ImGuiCond_FirstUseEver);
+    if (g_restore_position) {
+        ImGui::SetNextWindowPos(ImVec2(g_restore_x, g_restore_y),
+                                ImGuiCond_Always);
+        g_restore_position = false;
+    } else {
+        ImGui::SetNextWindowPos(ImVec2(40.0f, 40.0f), ImGuiCond_FirstUseEver);
+    }
     // Collapse is handled by the custom title bar, never by ImGui's built-in
     // title-bar state (which is disabled by NoTitleBar).
     ImGui::SetNextWindowCollapsed(false, ImGuiCond_Always);
@@ -132,11 +271,10 @@ void draw_menu() {
 
     record_menu_rect();
 
-    // Custom title bar: ▼ minimizes, ▶ expands. The rest of the title row is
-    // the drag handle because NoTitleBar disables the default one.
+    // Custom title bar: ▼ minimizes. The rest of the title row is the drag
+    // handle because NoTitleBar disables the default one.
     ImGui::BeginDisabled(!ui_enabled);
-    const bool toggle = ImGui::ArrowButton(
-        "##droneview_toggle", g_collapsed ? ImGuiDir_Right : ImGuiDir_Down);
+    const bool toggle = ImGui::ArrowButton("##droneview_toggle", ImGuiDir_Down);
     ImGui::EndDisabled();
     ImGui::SameLine();
 
@@ -157,19 +295,16 @@ void draw_menu() {
                title_pos.y + style.FramePadding.y),
         ImGui::GetColorU32(ImGuiCol_Text), "Drone View");
 
-    bool expand_clicked = false;
-    if (toggle) {
-        if (g_collapsed) {
-            g_collapsed = false;
-            expand_clicked = true;
-        } else {
-            g_collapsed = true;
-        }
+    if (toggle && g_icon_texture != 0) {
+        const ImVec2 pos = ImGui::GetWindowPos();
+        const ImVec2 display = ImGui::GetIO().DisplaySize;
+        g_icon_x = std::max(0.0f, std::min(pos.x, display.x - kIconDisplaySize));
+        g_icon_y = std::max(0.0f, std::min(pos.y, display.y - kIconDisplaySize));
+        g_icon_position_valid = true;
+        g_collapsed = true;
     }
 
-    if (!g_collapsed && !expand_clicked) {
-        ImGui::Separator();
-        ImGui::TextDisabled("MLBB Drone View");
+    if (!g_collapsed) {
         ImGui::Separator();
         ImGui::BeginDisabled(!ui_enabled);
         ImGui::Checkbox("Enable", &g_enabled);
@@ -244,6 +379,8 @@ bool initialize(const char* ini_filename, const char* log_filename) {
         return false;
     }
 
+    create_icon_texture();
+
     g_initialized.store(true, std::memory_order_release);
     return true;
 }
@@ -289,6 +426,7 @@ void shutdown() {
     if (!g_initialized.load(std::memory_order_acquire)) {
         return;
     }
+    destroy_icon_texture();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui::DestroyContext();
     g_initialized.store(false, std::memory_order_release);
@@ -309,6 +447,7 @@ void reset_for_context_loss() {
     // The old EGL context is gone, so GL deletion is invalid here. The
     // backend's GL objects leak with that context; this is safer than issuing
     // GL calls in the new context.
+    g_icon_texture = 0;
     ImGui::DestroyContext();
     g_touch_active = false;
     {

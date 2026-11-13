@@ -841,10 +841,14 @@ CMakeFiles/droneview.dir/src/frontend/menu.cpp.o: \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__functional/pointer_to_binary_function.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__functional/pointer_to_unary_function.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__functional/unary_negate.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/GLES3/gl3.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/GLES3/gl3platform.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/KHR/khrplatform.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/app/platform/platform.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/droneview/backend.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui/imgui.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui/imconfig.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/assert.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui/backends/imgui_impl_opengl3.h \
-  /data/data/com.termux/files/home/frida/droneview-menu/src/frontend/droidsans_ttf.inc
+  /data/data/com.termux/files/home/frida/droneview-menu/src/frontend/droidsans_ttf.inc \
+  /data/data/com.termux/files/home/frida/droneview-menu/src/frontend/icon_rgba.inc

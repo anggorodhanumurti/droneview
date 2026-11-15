@@ -2,9 +2,12 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cctype>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <deque>
+#include <memory>
 #include <mutex>
 #include <string>
 
@@ -13,8 +16,11 @@
 #include "app/platform/platform.h"
 #include "droneview/backend.h"
 
+#include "backend/soft_keyboard.h"
+
 #include "imgui.h"
 #include "backends/imgui_impl_opengl3.h"
+#include "imgui_console.h"
 
 #include "droidsans_ttf.inc"
 #include "icon_rgba.inc"
@@ -35,7 +41,8 @@ constexpr float kFovPresets[] = {40.0f, 60.0f, 80.0f};
 float g_ui_scale = 1.4f;
 float g_font_scale = 1.0f;
 constexpr float kFontPixelSize = 18.0f;
-constexpr float kMenuWidth = 390.0f;
+constexpr float kConsoleWidth = 560.0f;
+constexpr float kConsoleLogHeight = 220.0f;
 constexpr float kIconDisplaySize = 64.0f;
 constexpr float kIconDragThreshold = 4.0f;
 bool g_collapsed = false;
@@ -51,6 +58,7 @@ float g_icon_drag_start_y = 0.0f;
 float g_icon_window_start_x = 0.0f;
 float g_icon_window_start_y = 0.0f;
 GLuint g_icon_texture = 0;
+std::unique_ptr<ImGuiConsole> g_console;
 std::string g_ini_filename = "droneview.ini";
 std::string g_log_filename = "droneview_.txt";
 ImGuiStyle g_base_style;
@@ -59,12 +67,46 @@ std::mutex g_touch_mutex;
 std::deque<TouchEvent> g_touch_events;
 bool g_touch_active = false;
 
+enum class InputEventType { Character, Key };
+struct InputEvent {
+    InputEventType type;
+    unsigned int codepoint;
+    int key;
+    bool down;
+};
+std::mutex g_input_mutex;
+std::deque<InputEvent> g_input_events;
+std::atomic<bool> g_ctrl{false};
+std::atomic<bool> g_shift{false};
+std::atomic<bool> g_alt{false};
+std::atomic<bool> g_text_input_wanted{false};
+std::atomic<bool> g_console_view_active{false};
+
+enum class MenuEventType { Key, Char };
+struct MenuEvent {
+    MenuEventType type;
+    int key;
+    unsigned int codepoint;
+};
+std::mutex g_menu_mutex;
+std::deque<MenuEvent> g_menu_events;
+std::atomic<bool> g_control_menu_active{false};
+int g_control_menu_index = 0;
+std::string g_control_menu_status;
+
 std::mutex g_rect_mutex;
 float g_menu_x = 0.0f;
 float g_menu_y = 0.0f;
 float g_menu_w = 0.0f;
 float g_menu_h = 0.0f;
 bool g_menu_rect_valid = false;
+float g_console_input_x = 0.0f;
+float g_console_input_y = 0.0f;
+float g_console_input_w = 0.0f;
+float g_console_input_h = 0.0f;
+bool g_console_input_valid = false;
+std::atomic<bool> g_console_focus_request{false};
+std::atomic<bool> g_console_blur_request{false};
 
 void record_menu_rect() {
     const ImVec2 pos = ImGui::GetWindowPos();
@@ -78,6 +120,33 @@ void record_menu_rect() {
     g_menu_w = size.x;
     g_menu_h = size.y;
     g_menu_rect_valid = true;
+}
+
+void record_console_input_rect() {
+    ImVec2 min;
+    ImVec2 max;
+    const bool valid = g_console && g_console->GetInputRect(&min, &max);
+    std::lock_guard<std::mutex> lock(g_rect_mutex);
+    g_console_input_valid = valid;
+    if (valid) {
+        g_console_input_x = min.x;
+        g_console_input_y = min.y;
+        g_console_input_w = max.x - min.x;
+        g_console_input_h = max.y - min.y;
+    }
+}
+
+void clear_console_input_rect() {
+    std::lock_guard<std::mutex> lock(g_rect_mutex);
+    g_console_input_valid = false;
+}
+
+bool consume_console_focus_request() {
+    return g_console_focus_request.exchange(false, std::memory_order_acq_rel);
+}
+
+bool consume_console_blur_request() {
+    return g_console_blur_request.exchange(false, std::memory_order_acq_rel);
 }
 
 void apply_touch_events() {
@@ -117,6 +186,48 @@ void apply_touch_events() {
     }
 }
 
+void apply_key_events() {
+    ImGuiIO& io = ImGui::GetIO();
+    if (!g_text_input_wanted.load(std::memory_order_relaxed)) {
+        g_ctrl.store(false, std::memory_order_relaxed);
+        g_shift.store(false, std::memory_order_relaxed);
+        g_alt.store(false, std::memory_order_relaxed);
+    }
+    io.KeyCtrl = g_ctrl.load(std::memory_order_relaxed);
+    io.KeyShift = g_shift.load(std::memory_order_relaxed);
+    io.KeyAlt = g_alt.load(std::memory_order_relaxed);
+
+    std::deque<InputEvent> pending;
+    {
+        std::lock_guard<std::mutex> lock(g_input_mutex);
+        pending.swap(g_input_events);
+    }
+
+    // Characters before the next key transition are safe to apply together.
+    // A single key transition is applied per frame so a quick down/up pair is
+    // not collapsed before ImGui observes the press.
+    std::size_t next = 0;
+    for (; next < pending.size(); ++next) {
+        const InputEvent& event = pending[next];
+        if (event.type == InputEventType::Character) {
+            io.AddInputCharacter(event.codepoint);
+            continue;
+        }
+        const int index = io.KeyMap[event.key];
+        if (index >= 0) {
+            io.KeysDown[index] = event.down;
+        }
+        ++next;
+        break;
+    }
+    if (next < pending.size()) {
+        std::lock_guard<std::mutex> lock(g_input_mutex);
+        for (std::size_t i = pending.size(); i > next; --i) {
+            g_input_events.push_front(pending[i - 1]);
+        }
+    }
+}
+
 void create_icon_texture() {
     if (g_icon_texture != 0) {
         return;
@@ -150,21 +261,216 @@ void destroy_icon_texture() {
     }
 }
 
+int control_menu_fov_value() {
+    const int index = (g_fov_index >= 0 && g_fov_index < 3) ? g_fov_index : 0;
+    return static_cast<int>(kFovPresets[index]);
+}
+
+void minimize_overlay() {
+    if (g_icon_texture == 0) {
+        return;
+    }
+    const ImVec2 pos = ImGui::GetWindowPos();
+    const ImVec2 display = ImGui::GetIO().DisplaySize;
+    g_icon_x = std::max(0.0f, std::min(pos.x, display.x - kIconDisplaySize));
+    g_icon_y = std::max(0.0f, std::min(pos.y, display.y - kIconDisplaySize));
+    g_icon_position_valid = true;
+    g_collapsed = true;
+}
+
+std::string trim_ascii(const std::string& value) {
+    std::size_t begin = 0;
+    while (begin < value.size() &&
+           std::isspace(static_cast<unsigned char>(value[begin]))) {
+        ++begin;
+    }
+    std::size_t end = value.size();
+    while (end > begin &&
+           std::isspace(static_cast<unsigned char>(value[end - 1]))) {
+        --end;
+    }
+    return value.substr(begin, end - begin);
+}
+
+void activate_control_menu_item(int index) {
+    switch (index) {
+        case 0:
+            g_enabled = !g_enabled;
+            g_control_menu_status =
+                g_enabled ? "Drone View ON" : "Drone View OFF";
+            break;
+        case 1:
+            g_fov_index = 0;
+            g_control_menu_status = "FOV set to 40";
+            break;
+        case 2:
+            g_fov_index = 1;
+            g_control_menu_status = "FOV set to 60";
+            break;
+        case 3:
+            g_fov_index = 2;
+            g_control_menu_status = "FOV set to 80";
+            break;
+        case 4:
+            g_control_menu_status =
+                "Current FOV: " + std::to_string(control_menu_fov_value());
+            break;
+        case 5:
+            g_control_menu_active.store(false, std::memory_order_relaxed);
+            break;
+        default:
+            break;
+    }
+}
+
+void process_control_menu_events() {
+    std::deque<MenuEvent> events;
+    {
+        std::lock_guard<std::mutex> lock(g_menu_mutex);
+        events.swap(g_menu_events);
+    }
+    constexpr int kItemCount = 6;
+    for (const MenuEvent& event : events) {
+        if (!g_control_menu_active.load(std::memory_order_relaxed)) {
+            break;
+        }
+        if (event.type == MenuEventType::Char) {
+            const unsigned int c = event.codepoint;
+            if (c == 'k' || c == 'K') {
+                g_control_menu_index =
+                    (g_control_menu_index + kItemCount - 1) % kItemCount;
+            } else if (c == 'j' || c == 'J') {
+                g_control_menu_index = (g_control_menu_index + 1) % kItemCount;
+            } else if (c == 'q' || c == 'Q') {
+                minimize_overlay();
+            } else if (c == ' ' || c == '\r' || c == '\n') {
+                activate_control_menu_item(g_control_menu_index);
+            } else if (c >= '0' && c <= '5') {
+                g_control_menu_index =
+                    c == '0' ? 5 : static_cast<int>(c - '1');
+            }
+            continue;
+        }
+        switch (event.key) {
+            case ImGuiKey_UpArrow:
+                g_control_menu_index =
+                    (g_control_menu_index + kItemCount - 1) % kItemCount;
+                break;
+            case ImGuiKey_DownArrow:
+                g_control_menu_index = (g_control_menu_index + 1) % kItemCount;
+                break;
+            case ImGuiKey_Home:
+                g_control_menu_index = 0;
+                break;
+            case ImGuiKey_End:
+                g_control_menu_index = kItemCount - 1;
+                break;
+            case ImGuiKey_Enter:
+            case ImGuiKey_KeyPadEnter:
+            case ImGuiKey_Space:
+                activate_control_menu_item(g_control_menu_index);
+                break;
+            case ImGuiKey_Escape:
+                g_control_menu_active.store(false, std::memory_order_relaxed);
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+bool handle_control_menu_line(const std::string& line) {
+    if (!g_control_menu_active.load(std::memory_order_relaxed)) {
+        return false;
+    }
+    const std::string command = trim_ascii(line);
+    if (command.empty()) {
+        return false;
+    }
+    if (command == "0") {
+        g_control_menu_index = 5;
+        activate_control_menu_item(5);
+        return true;
+    }
+    if (command.size() == 1 && command[0] >= '1' && command[0] <= '5') {
+        const int item = static_cast<int>(command[0] - '1');
+        g_control_menu_index = item;
+        activate_control_menu_item(item);
+        return true;
+    }
+    if (command == "q" || command == "Q") {
+        minimize_overlay();
+        return true;
+    }
+    return false;
+}
+
+void draw_control_menu() {
+    const ImVec4 accent(0.62f, 0.48f, 1.0f, 1.0f);
+    const ImVec4 dim(0.62f, 0.62f, 0.62f, 1.0f);
+
+    ImGui::TextColored(accent, "Drone View Control");
+    ImGui::TextDisabled("Numbered menu - keyboard or tap");
+    ImGui::Separator();
+
+    static const char* const kLabels[] = {
+        "1. Toggle Drone View",
+        "2. FOV: Medium (40)",
+        "3. FOV: Wide (60)",
+        "4. FOV: Birdeye (80)",
+        "5. Show Backend Status",
+        "0. Exit Menu",
+    };
+
+    for (int i = 0; i < 6; ++i) {
+        const bool selected = i == g_control_menu_index;
+        char label[160];
+        std::snprintf(label, sizeof(label), "%s %s###drone_control_%d",
+                      selected ? ">" : " ", kLabels[i], i);
+        if (selected) {
+            ImGui::PushStyleColor(ImGuiCol_Text, accent);
+        }
+        const bool clicked = ImGui::Selectable(label, selected);
+        if (selected) {
+            ImGui::PopStyleColor();
+        }
+        if (clicked) {
+            g_control_menu_index = i;
+            activate_control_menu_item(i);
+        }
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Status: Drone View %s | FOV %d",
+                g_enabled ? "ON" : "OFF", control_menu_fov_value());
+    if (!g_control_menu_status.empty()) {
+        ImGui::TextWrapped("%s", g_control_menu_status.c_str());
+    }
+    ImGui::Separator();
+    ImGui::TextColored(dim, "enter select  1-5 jump  0 exit  q minimize");
+}
+
 void draw_menu() {
     const ImGuiStyle& style = ImGui::GetStyle();
-    // The menu is only interactive once the backend verified MLBB v2.2.23 or v2.2.16.
-    const bool ui_enabled = dv::backend::initial_checks_passed();
-
-    // Keep the status line visible while the version is unsupported.
-    if (!ui_enabled && g_collapsed) {
-        g_collapsed = false;
-    }
     // Never hide the menu behind an icon that could not be created.
     if (g_collapsed && g_icon_texture == 0) {
         g_collapsed = false;
     }
 
+    const bool console_open = !g_collapsed;
+    g_console_view_active.store(console_open, std::memory_order_relaxed);
+
     if (g_collapsed) {
+        if (dv::soft_keyboard::visible()) {
+            dv::soft_keyboard::hide(nullptr);
+        }
+        if (g_console) {
+            g_console->DeactivateInput();
+        }
+        {
+            std::lock_guard<std::mutex> lock(g_menu_mutex);
+            g_menu_events.clear();
+        }
         if (!g_icon_position_valid) {
             g_icon_x = 40.0f;
             g_icon_y = 40.0f;
@@ -235,17 +541,16 @@ void draw_menu() {
                 g_icon_drag_moved = false;
             }
             record_menu_rect();
+            clear_console_input_rect();
         }
         ImGui::End();
         ImGui::PopStyleVar(2);
         return;
     }
 
-    // Fixed width, height follows the content. This keeps the wrapped status
-    // line at the bottom visible instead of clipping it at a fixed height.
     const float max_height = std::max(ImGui::GetIO().DisplaySize.y, 1.0f);
     ImGui::SetNextWindowSizeConstraints(
-        ImVec2(kMenuWidth, 0.0f), ImVec2(kMenuWidth, max_height));
+        ImVec2(kConsoleWidth, 0.0f), ImVec2(kConsoleWidth, max_height));
     if (g_restore_position) {
         ImGui::SetNextWindowPos(ImVec2(g_restore_x, g_restore_y),
                                 ImGuiCond_Always);
@@ -260,11 +565,10 @@ void draw_menu() {
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar |
                              ImGuiWindowFlags_NoCollapse |
                              ImGuiWindowFlags_AlwaysAutoResize;
-    if (g_collapsed) {
-        flags |= ImGuiWindowFlags_NoResize;
-    }
 
-    if (!ImGui::Begin("Drone View", nullptr, flags)) {
+    const char* window_title = "Drone Console";
+
+    if (!ImGui::Begin(window_title, nullptr, flags)) {
         ImGui::End();
         return;
     }
@@ -273,9 +577,7 @@ void draw_menu() {
 
     // Custom title bar: ▼ minimizes. The rest of the title row is the drag
     // handle because NoTitleBar disables the default one.
-    ImGui::BeginDisabled(!ui_enabled);
     const bool toggle = ImGui::ArrowButton("##droneview_toggle", ImGuiDir_Down);
-    ImGui::EndDisabled();
     ImGui::SameLine();
 
     const ImVec2 title_pos = ImGui::GetCursorScreenPos();
@@ -293,31 +595,45 @@ void draw_menu() {
     ImGui::GetWindowDrawList()->AddText(
         ImVec2(title_pos.x + style.FramePadding.x,
                title_pos.y + style.FramePadding.y),
-        ImGui::GetColorU32(ImGuiCol_Text), "Drone View");
+        ImGui::GetColorU32(ImGuiCol_Text), window_title);
 
-    if (toggle && g_icon_texture != 0) {
-        const ImVec2 pos = ImGui::GetWindowPos();
-        const ImVec2 display = ImGui::GetIO().DisplaySize;
-        g_icon_x = std::max(0.0f, std::min(pos.x, display.x - kIconDisplaySize));
-        g_icon_y = std::max(0.0f, std::min(pos.y, display.y - kIconDisplaySize));
-        g_icon_position_valid = true;
-        g_collapsed = true;
+    if (toggle) {
+        minimize_overlay();
     }
 
     if (!g_collapsed) {
         ImGui::Separator();
-        ImGui::BeginDisabled(!ui_enabled);
-        ImGui::Checkbox("Enable", &g_enabled);
-        ImGui::TextUnformatted("FOV");
-        ImGui::RadioButton("Medium (FOV 40)", &g_fov_index, 0);
-        ImGui::RadioButton("Wide (FOV 60)", &g_fov_index, 1);
-        ImGui::RadioButton("Birdeye (FOV 80)", &g_fov_index, 2);
-        ImGui::EndDisabled();
-        ImGui::Separator();
-        const std::string state = dv::backend::status();
-        ImGui::TextWrapped("%s", state.c_str());
-    }
 
+        if (g_control_menu_active.load(std::memory_order_relaxed)) {
+            clear_console_input_rect();
+            if (g_console) {
+                const bool focus = consume_console_focus_request();
+                const bool blur = consume_console_blur_request();
+                if (focus) {
+                    g_console->RequestInputFocus();
+                } else if (blur) {
+                    g_console->DeactivateInput();
+                }
+                g_console->DrawInputBar();
+                record_console_input_rect();
+            }
+            process_control_menu_events();
+            ImGui::Separator();
+            draw_control_menu();
+        } else if (g_console) {
+            const bool focus = consume_console_focus_request();
+            const bool blur = consume_console_blur_request();
+            if (focus) {
+                g_console->RequestInputFocus();
+            } else if (blur) {
+                g_console->DeactivateInput();
+            }
+            g_console->DrawInputBar();
+            ImGui::Separator();
+            g_console->DrawLogWindow(false, kConsoleLogHeight);
+            record_console_input_rect();
+        }
+    }
     ImGui::End();
 }
 
@@ -342,6 +658,31 @@ bool initialize(const char* ini_filename, const char* log_filename) {
     io.LogFilename = g_log_filename.c_str();
     io.DisplaySize = ImVec2(1280.0f, 720.0f);
     io.DeltaTime = 1.0f / 60.0f;
+
+    // Map the keys used by InputText to our own KeysDown indices. No platform
+    // keyboard backend exists for this overlay, so the index values are ours.
+    io.KeyMap[ImGuiKey_Tab] = 1;
+    io.KeyMap[ImGuiKey_LeftArrow] = 2;
+    io.KeyMap[ImGuiKey_RightArrow] = 3;
+    io.KeyMap[ImGuiKey_UpArrow] = 4;
+    io.KeyMap[ImGuiKey_DownArrow] = 5;
+    io.KeyMap[ImGuiKey_PageUp] = 6;
+    io.KeyMap[ImGuiKey_PageDown] = 7;
+    io.KeyMap[ImGuiKey_Home] = 8;
+    io.KeyMap[ImGuiKey_End] = 9;
+    io.KeyMap[ImGuiKey_Insert] = 10;
+    io.KeyMap[ImGuiKey_Delete] = 11;
+    io.KeyMap[ImGuiKey_Backspace] = 12;
+    io.KeyMap[ImGuiKey_Space] = 13;
+    io.KeyMap[ImGuiKey_Enter] = 14;
+    io.KeyMap[ImGuiKey_Escape] = 15;
+    io.KeyMap[ImGuiKey_KeyPadEnter] = 16;
+    io.KeyMap[ImGuiKey_A] = 17;
+    io.KeyMap[ImGuiKey_C] = 18;
+    io.KeyMap[ImGuiKey_V] = 19;
+    io.KeyMap[ImGuiKey_X] = 20;
+    io.KeyMap[ImGuiKey_Z] = 21;
+    io.KeyMap[ImGuiKey_Y] = 22;
 
     ImGui::StyleColorsDark();
     g_base_style = ImGui::GetStyle();
@@ -381,6 +722,53 @@ bool initialize(const char* ini_filename, const char* log_filename) {
 
     create_icon_texture();
 
+    g_console = std::make_unique<ImGuiConsole>("Drone Console", 256);
+    g_console->SetInputHint("CHOOSE MENU NUMBER HERE");
+    g_console->SetLineHandler(handle_control_menu_line);
+    g_console->System().RegisterCommand(
+        "status", "Show the drone view backend status", []() {
+            g_console->System().Log(csys::INFO)
+                << dv::backend::status() << csys::endl;
+        });
+    g_console->System().RegisterCommand(
+        "enable", "Enable or disable drone view (0 or 1)",
+        [](int value) { g_enabled = value != 0; },
+        csys::Arg<int>("0_or_1"));
+    g_console->System().RegisterCommand(
+        "fov", "Set the FOV preset (40, 60, or 80)",
+        [](int fov) {
+            if (fov == 40) {
+                g_fov_index = 0;
+            } else if (fov == 60) {
+                g_fov_index = 1;
+            } else if (fov == 80) {
+                g_fov_index = 2;
+            } else {
+                g_console->System().Log(csys::ERROR)
+                    << "fov: expected 40, 60, or 80" << csys::endl;
+            }
+        },
+        csys::Arg<int>("fov"));
+    g_console->System().RegisterCommand(
+        "drone", "Open the numbered Drone View control menu", []() {
+            {
+                std::lock_guard<std::mutex> lock(g_menu_mutex);
+                g_menu_events.clear();
+            }
+            g_control_menu_index = 0;
+            g_control_menu_status.clear();
+            if (g_console) {
+                g_console->DeactivateInput();
+            }
+            g_control_menu_active.store(true, std::memory_order_relaxed);
+        });
+    g_console->System().Log(csys::INFO)
+        << "Drone Console ready. The control menu is open; type 'help' for "
+           "commands."
+        << csys::endl;
+    // Start with the drone control menu as the primary interface.
+    g_console->System().RunCommand("drone");
+
     g_initialized.store(true, std::memory_order_release);
     return true;
 }
@@ -411,10 +799,13 @@ void frame() {
         scaled.ScaleAllSizes(g_ui_scale);
         ImGui::GetStyle() = scaled;
     }
+    dv::soft_keyboard::poll();
     apply_touch_events();
+    apply_key_events();
     ImGui::NewFrame();
     draw_menu();
     ImGui::Render();
+    g_text_input_wanted.store(io.WantTextInput, std::memory_order_relaxed);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     // Apply the UI state after rendering so the menu stays responsive even if
@@ -426,38 +817,81 @@ void shutdown() {
     if (!g_initialized.load(std::memory_order_acquire)) {
         return;
     }
+    dv::soft_keyboard::destroy();
     destroy_icon_texture();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui::DestroyContext();
+    g_console.reset();
     g_initialized.store(false, std::memory_order_release);
+    g_text_input_wanted.store(false, std::memory_order_relaxed);
+    g_console_view_active.store(false, std::memory_order_relaxed);
+    g_control_menu_active.store(false, std::memory_order_relaxed);
+    g_control_menu_index = 0;
+    g_control_menu_status.clear();
     {
-        std::lock_guard<std::mutex> lock(g_touch_mutex);
-        g_touch_events.clear();
+        std::lock_guard<std::mutex> lock(g_menu_mutex);
+        g_menu_events.clear();
     }
-    {
-        std::lock_guard<std::mutex> lock(g_rect_mutex);
-        g_menu_rect_valid = false;
-    }
-}
-
-void reset_for_context_loss() {
-    if (!g_initialized.exchange(false, std::memory_order_acq_rel)) {
-        return;
-    }
-    // The old EGL context is gone, so GL deletion is invalid here. The
-    // backend's GL objects leak with that context; this is safer than issuing
-    // GL calls in the new context.
-    g_icon_texture = 0;
-    ImGui::DestroyContext();
+    g_ctrl.store(false, std::memory_order_relaxed);
+    g_shift.store(false, std::memory_order_relaxed);
+    g_alt.store(false, std::memory_order_relaxed);
     g_touch_active = false;
     {
         std::lock_guard<std::mutex> lock(g_touch_mutex);
         g_touch_events.clear();
     }
     {
+        std::lock_guard<std::mutex> lock(g_input_mutex);
+        g_input_events.clear();
+    }
+    {
         std::lock_guard<std::mutex> lock(g_rect_mutex);
         g_menu_rect_valid = false;
+        g_console_input_valid = false;
     }
+    g_console_focus_request.store(false, std::memory_order_relaxed);
+    g_console_blur_request.store(false, std::memory_order_relaxed);
+}
+
+void reset_for_context_loss() {
+    if (!g_initialized.exchange(false, std::memory_order_acq_rel)) {
+        return;
+    }
+    dv::soft_keyboard::destroy();
+    // The old EGL context is gone, so GL deletion is invalid here. The
+    // backend's GL objects leak with that context; this is safer than issuing
+    // GL calls in the new context.
+    g_icon_texture = 0;
+    ImGui::DestroyContext();
+    g_console.reset();
+    g_touch_active = false;
+    g_text_input_wanted.store(false, std::memory_order_relaxed);
+    g_console_view_active.store(false, std::memory_order_relaxed);
+    g_control_menu_active.store(false, std::memory_order_relaxed);
+    g_control_menu_index = 0;
+    g_control_menu_status.clear();
+    {
+        std::lock_guard<std::mutex> lock(g_menu_mutex);
+        g_menu_events.clear();
+    }
+    g_ctrl.store(false, std::memory_order_relaxed);
+    g_shift.store(false, std::memory_order_relaxed);
+    g_alt.store(false, std::memory_order_relaxed);
+    {
+        std::lock_guard<std::mutex> lock(g_touch_mutex);
+        g_touch_events.clear();
+    }
+    {
+        std::lock_guard<std::mutex> lock(g_input_mutex);
+        g_input_events.clear();
+    }
+    {
+        std::lock_guard<std::mutex> lock(g_rect_mutex);
+        g_menu_rect_valid = false;
+        g_console_input_valid = false;
+    }
+    g_console_focus_request.store(false, std::memory_order_relaxed);
+    g_console_blur_request.store(false, std::memory_order_relaxed);
 }
 
 bool touch_captures(float x, float y) {
@@ -477,6 +911,83 @@ void queue_touch(float x, float y, int action) {
     if (g_touch_events.size() < 32) {
         g_touch_events.push_back(TouchEvent{x, y, action});
     }
+}
+
+bool console_input_hit(float x, float y) {
+    std::lock_guard<std::mutex> lock(g_rect_mutex);
+    return g_console_input_valid && x >= g_console_input_x &&
+           y >= g_console_input_y &&
+           x <= g_console_input_x + g_console_input_w &&
+           y <= g_console_input_y + g_console_input_h;
+}
+
+bool console_view_active() {
+    return g_console_view_active.load(std::memory_order_relaxed);
+}
+
+void request_console_input_focus() {
+    g_console_focus_request.store(true, std::memory_order_release);
+}
+
+void request_console_input_blur() {
+    g_console_blur_request.store(true, std::memory_order_release);
+}
+
+bool text_input_wanted() {
+    return g_text_input_wanted.load(std::memory_order_relaxed);
+}
+
+bool menu_active() {
+    return g_control_menu_active.load(std::memory_order_relaxed);
+}
+
+void queue_menu_key(int imgui_key) {
+    if (imgui_key < 0 || imgui_key >= ImGuiKey_COUNT) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(g_menu_mutex);
+    if (g_menu_events.size() < 64) {
+        g_menu_events.push_back(MenuEvent{MenuEventType::Key, imgui_key, 0});
+    }
+}
+
+void queue_menu_char(unsigned int codepoint) {
+    if (codepoint == 0) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(g_menu_mutex);
+    if (g_menu_events.size() < 128) {
+        g_menu_events.push_back(
+            MenuEvent{MenuEventType::Char, 0, codepoint});
+    }
+}
+
+void queue_character(unsigned int codepoint) {
+    if (codepoint == 0) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(g_input_mutex);
+    if (g_input_events.size() < 512) {
+        g_input_events.push_back(
+            InputEvent{InputEventType::Character, codepoint, 0, false});
+    }
+}
+
+void queue_key(int imgui_key, bool down) {
+    if (imgui_key < 0 || imgui_key >= ImGuiKey_COUNT) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(g_input_mutex);
+    if (g_input_events.size() < 512) {
+        g_input_events.push_back(
+            InputEvent{InputEventType::Key, 0, imgui_key, down});
+    }
+}
+
+void set_modifiers(bool ctrl, bool shift, bool alt) {
+    g_ctrl.store(ctrl, std::memory_order_relaxed);
+    g_shift.store(shift, std::memory_order_relaxed);
+    g_alt.store(alt, std::memory_order_relaxed);
 }
 
 }  // namespace dv::frontend

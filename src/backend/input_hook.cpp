@@ -12,6 +12,7 @@
 #include "app/hooks/hook_engine.h"
 #include "app/platform/platform.h"
 #include "droneview/frontend.h"
+#include "soft_keyboard.h"
 
 #if APP_PLATFORM_ANDROID
 #include <elf.h>
@@ -103,12 +104,27 @@ bool feed_motion(JNIEnv* env, jobject thiz, jobject event) {
 
     if (action_code == 0) {
         g_swallow_touch.store(dv::frontend::touch_captures(x, y));
+        if (dv::frontend::console_view_active()) {
+            dv::soft_keyboard::prepare(env, thiz);
+        }
     }
     const bool consumed = g_swallow_touch.load();
     if (consumed) {
         dv::frontend::queue_touch(x, y, action_code);
     }
     if (action_code == 1 || action_code == 3) {
+        if (action_code == 1) {
+            const bool console_tap =
+                dv::frontend::console_view_active() &&
+                dv::frontend::console_input_hit(x, y);
+            if (console_tap) {
+                dv::frontend::request_console_input_focus();
+                dv::soft_keyboard::show(env, thiz);
+            } else if (dv::soft_keyboard::visible()) {
+                dv::frontend::request_console_input_blur();
+                dv::soft_keyboard::hide(env);
+            }
+        }
         g_swallow_touch.store(false);
     }
 
@@ -122,7 +138,262 @@ bool feed_motion(JNIEnv* env, jobject thiz, jobject event) {
     return consumed;
 }
 
+jclass g_key_event_class = nullptr;
+
+bool is_key_event(JNIEnv* env, jobject event) {
+    if (g_key_event_class == nullptr) {
+        jclass local = env->FindClass("android/view/KeyEvent");
+        if (local == nullptr) {
+            env->ExceptionClear();
+            return false;
+        }
+        g_key_event_class = static_cast<jclass>(env->NewGlobalRef(local));
+        env->DeleteLocalRef(local);
+    }
+    return g_key_event_class != nullptr &&
+           env->IsInstanceOf(event, g_key_event_class);
+}
+
+bool feed_key(JNIEnv* env, jobject event) {
+    if (!dv::frontend::initialized()) {
+        return false;
+    }
+    const bool menu = dv::frontend::menu_active() &&
+                      dv::frontend::console_view_active() &&
+                      !dv::frontend::text_input_wanted();
+    if (!menu) {
+        // While the soft keyboard is visible the EditText owns key input and
+        // the text polling bridge forwards it.
+        if (dv::soft_keyboard::visible()) {
+            return false;
+        }
+        if (!dv::frontend::text_input_wanted()) {
+            return false;
+        }
+    }
+
+    jclass event_class = env->GetObjectClass(event);
+    if (event_class == nullptr) {
+        return false;
+    }
+    jmethodID get_action = env->GetMethodID(event_class, "getAction", "()I");
+    jmethodID get_key_code =
+        env->GetMethodID(event_class, "getKeyCode", "()I");
+    jmethodID get_meta =
+        env->GetMethodID(event_class, "getMetaState", "()I");
+    jmethodID get_unicode =
+        env->GetMethodID(event_class, "getUnicodeChar", "(I)I");
+    if (get_action == nullptr || get_key_code == nullptr ||
+        get_meta == nullptr) {
+        env->ExceptionClear();
+        env->DeleteLocalRef(event_class);
+        return false;
+    }
+
+    const int action =
+        static_cast<int>(env->CallIntMethod(event, get_action)) & 0xff;
+    const int key_code =
+        static_cast<int>(env->CallIntMethod(event, get_key_code));
+    const int meta = static_cast<int>(env->CallIntMethod(event, get_meta));
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+        env->DeleteLocalRef(event_class);
+        return false;
+    }
+
+    const bool down = action == 0;  // ACTION_DOWN
+    const bool up = action == 1;    // ACTION_UP
+    if (!down && !up) {
+        env->DeleteLocalRef(event_class);
+        return false;
+    }
+
+    if (menu) {
+        bool handled = false;
+        if (down) {
+            switch (key_code) {
+                case 19:  // KEYCODE_DPAD_UP
+                    dv::frontend::queue_menu_key(ImGuiKey_UpArrow);
+                    handled = true;
+                    break;
+                case 20:  // KEYCODE_DPAD_DOWN
+                    dv::frontend::queue_menu_key(ImGuiKey_DownArrow);
+                    handled = true;
+                    break;
+                case 66:   // KEYCODE_ENTER
+                case 160:  // KEYCODE_NUMPAD_ENTER
+                case 23:   // KEYCODE_DPAD_CENTER
+                    dv::frontend::queue_menu_key(ImGuiKey_Enter);
+                    handled = true;
+                    break;
+                case 4:    // KEYCODE_BACK
+                case 111:  // KEYCODE_ESCAPE
+                    dv::frontend::queue_menu_key(ImGuiKey_Escape);
+                    handled = true;
+                    break;
+                case 122:  // KEYCODE_MOVE_HOME
+                    dv::frontend::queue_menu_key(ImGuiKey_Home);
+                    handled = true;
+                    break;
+                case 123:  // KEYCODE_MOVE_END
+                    dv::frontend::queue_menu_key(ImGuiKey_End);
+                    handled = true;
+                    break;
+                default:
+                    if (get_unicode != nullptr) {
+                        const int unicode = static_cast<int>(
+                            env->CallIntMethod(event, get_unicode, meta));
+                        if (env->ExceptionCheck()) {
+                            env->ExceptionClear();
+                        } else if (unicode > 0) {
+                            dv::frontend::queue_menu_char(
+                                static_cast<unsigned int>(unicode));
+                            handled = true;
+                        }
+                    }
+                    break;
+            }
+        } else {
+            switch (key_code) {
+                case 19:   // KEYCODE_DPAD_UP
+                case 20:   // KEYCODE_DPAD_DOWN
+                case 66:   // KEYCODE_ENTER
+                case 160:  // KEYCODE_NUMPAD_ENTER
+                case 23:   // KEYCODE_DPAD_CENTER
+                case 4:    // KEYCODE_BACK
+                case 111:  // KEYCODE_ESCAPE
+                case 122:  // KEYCODE_MOVE_HOME
+                case 123:  // KEYCODE_MOVE_END
+                    handled = true;
+                    break;
+                default:
+                    break;
+            }
+        }
+        env->DeleteLocalRef(event_class);
+        return handled;
+    }
+
+    bool ctrl = (meta & 0x1000) != 0;  // META_CTRL_ON
+    bool shift = (meta & 0x0001) != 0; // META_SHIFT_ON
+    bool alt = (meta & 0x0002) != 0;   // META_ALT_ON
+    switch (key_code) {
+        case 113:  // KEYCODE_CTRL_LEFT
+        case 114:  // KEYCODE_CTRL_RIGHT
+            ctrl = down;
+            break;
+        case 59:   // KEYCODE_SHIFT_LEFT
+        case 60:   // KEYCODE_SHIFT_RIGHT
+            shift = down;
+            break;
+        case 57:   // KEYCODE_ALT_LEFT
+        case 58:   // KEYCODE_ALT_RIGHT
+            alt = down;
+            break;
+        default:
+            break;
+    }
+    dv::frontend::set_modifiers(ctrl, shift, alt);
+
+    int imgui_key = -1;
+    switch (key_code) {
+        case 67:   // KEYCODE_DEL
+            imgui_key = ImGuiKey_Backspace;
+            break;
+        case 112:  // KEYCODE_FORWARD_DEL
+            imgui_key = ImGuiKey_Delete;
+            break;
+        case 66:   // KEYCODE_ENTER
+            imgui_key = ImGuiKey_Enter;
+            break;
+        case 160:  // KEYCODE_NUMPAD_ENTER
+            imgui_key = ImGuiKey_KeyPadEnter;
+            break;
+        case 61:   // KEYCODE_TAB
+            imgui_key = ImGuiKey_Tab;
+            break;
+        case 21:   // KEYCODE_DPAD_LEFT
+            imgui_key = ImGuiKey_LeftArrow;
+            break;
+        case 22:   // KEYCODE_DPAD_RIGHT
+            imgui_key = ImGuiKey_RightArrow;
+            break;
+        case 19:   // KEYCODE_DPAD_UP
+            imgui_key = ImGuiKey_UpArrow;
+            break;
+        case 20:   // KEYCODE_DPAD_DOWN
+            imgui_key = ImGuiKey_DownArrow;
+            break;
+        case 122:  // KEYCODE_MOVE_HOME
+            imgui_key = ImGuiKey_Home;
+            break;
+        case 123:  // KEYCODE_MOVE_END
+            imgui_key = ImGuiKey_End;
+            break;
+        case 92:   // KEYCODE_PAGE_UP
+            imgui_key = ImGuiKey_PageUp;
+            break;
+        case 93:   // KEYCODE_PAGE_DOWN
+            imgui_key = ImGuiKey_PageDown;
+            break;
+        case 111:  // KEYCODE_ESCAPE
+            imgui_key = ImGuiKey_Escape;
+            break;
+        case 29:   // KEYCODE_A
+            if (ctrl) imgui_key = ImGuiKey_A;
+            break;
+        case 31:   // KEYCODE_C
+            if (ctrl) imgui_key = ImGuiKey_C;
+            break;
+        case 50:   // KEYCODE_V
+            if (ctrl) imgui_key = ImGuiKey_V;
+            break;
+        case 52:   // KEYCODE_X
+            if (ctrl) imgui_key = ImGuiKey_X;
+            break;
+        case 54:   // KEYCODE_Z
+            if (ctrl) imgui_key = ImGuiKey_Z;
+            break;
+        case 53:   // KEYCODE_Y
+            if (ctrl) imgui_key = ImGuiKey_Y;
+            break;
+        default:
+            break;
+    }
+
+    if (imgui_key >= 0) {
+        dv::frontend::queue_key(imgui_key, down);
+        env->DeleteLocalRef(event_class);
+        return true;
+    }
+
+    if (down && !ctrl && !alt && get_unicode != nullptr) {
+        const int unicode =
+            static_cast<int>(env->CallIntMethod(event, get_unicode, meta));
+        if (env->ExceptionCheck()) {
+            env->ExceptionClear();
+            env->DeleteLocalRef(event_class);
+            return true;
+        }
+        if (unicode > 0) {
+            dv::frontend::queue_character(
+                static_cast<unsigned int>(unicode));
+        }
+    }
+    env->DeleteLocalRef(event_class);
+    return true;
+}
+
 jboolean input_replacement(JNIEnv* env, jobject thiz, jobject event) {
+    if (is_key_event(env, event)) {
+        if (feed_key(env, event)) {
+            return JNI_TRUE;
+        }
+        if (g_original != nullptr) {
+            return g_original(env, thiz, event);
+        }
+        return JNI_FALSE;
+    }
     const bool consumed = feed_motion(env, thiz, event);
     if (consumed) {
         return JNI_TRUE;

@@ -820,6 +820,8 @@ CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o: \
   /data/data/com.termux/files/home/frida/droneview-menu/include/app/hooks/hook_engine.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/app/platform/platform.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/droneview/frontend.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/src/backend/soft_keyboard.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/jni.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/elf.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/linux/elf.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/linux/elf-em.h \
@@ -828,7 +830,6 @@ CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o: \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android/asm/auxvec.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android/asm/hwcap.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/bits/elf_common.h \
-  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/jni.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/link.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui/imgui.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui/imconfig.h \

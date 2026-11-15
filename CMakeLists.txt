@@ -24,6 +24,7 @@ else()
 endif()
 
 set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/imgui")
+set(IMGUI_CONSOLE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/imgui-console")
 set(ANDROID_HEADERS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/android-headers")
 set(GLOSSHOOK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glosshook")
 set(APP_LIBCXX_STATIC
@@ -49,6 +50,17 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # ---------------------------------------------------------------------------
+# imgui-console (console widget + header-only csys)
+# ---------------------------------------------------------------------------
+add_library(imgui_console STATIC
+    "${IMGUI_CONSOLE_DIR}/src/imgui_console.cpp")
+target_include_directories(imgui_console PUBLIC
+    "${IMGUI_CONSOLE_DIR}/include/imgui_console"
+    "${IMGUI_CONSOLE_DIR}/include")
+target_link_libraries(imgui_console PUBLIC imgui)
+target_compile_features(imgui_console PUBLIC cxx_std_17)
+
+# ---------------------------------------------------------------------------
 # GlossHook (ARM64 prebuilt)
 # ---------------------------------------------------------------------------
 add_library(glosshook STATIC IMPORTED)
@@ -71,6 +83,7 @@ add_library(droneview SHARED
     src/backend/overlay_hook.cpp
     src/backend/input_hook.cpp
     src/backend/runtime.cpp
+    src/backend/soft_keyboard.cpp
     src/backend/entry.cpp
     src/backend/jni_onload.cpp
     src/frontend/menu.cpp)
@@ -90,6 +103,7 @@ target_compile_options(droneview PRIVATE -Wall -Wextra -Wno-unused-parameter)
 
 target_link_libraries(droneview PRIVATE
     imgui
+    imgui_console
     glosshook
     "${APP_LIBCXX_STATIC}"
     "${APP_LIBCXXABI_STATIC}"

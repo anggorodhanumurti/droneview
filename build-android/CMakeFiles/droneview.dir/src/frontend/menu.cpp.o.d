@@ -745,6 +745,7 @@ CMakeFiles/droneview.dir/src/frontend/menu.cpp.o: \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__bit/byteswap.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__bit/endian.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__bit/has_single_bit.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/cstdio \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/deque \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/enable_insertable.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__memory/temp_value.h \
@@ -781,7 +782,6 @@ CMakeFiles/droneview.dir/src/frontend/menu.cpp.o: \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/string_view \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__fwd/string_view.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__string/char_traits.h \
-  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/cstdio \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/formatter_integral.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__charconv/to_chars_integral.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__charconv/tables.h \
@@ -846,9 +846,92 @@ CMakeFiles/droneview.dir/src/frontend/menu.cpp.o: \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/android-headers/KHR/khrplatform.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/app/platform/platform.h \
   /data/data/com.termux/files/home/frida/droneview-menu/include/droneview/backend.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/src/backend/soft_keyboard.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/jni.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui/imgui.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui/imconfig.h \
   /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/assert.h \
   /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui/backends/imgui_impl_opengl3.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/imgui_console/imgui_console.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/csys/system.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/csys/command.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/csys/arguments.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/csys/api.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/csys/string.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/csys/exceptions.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/csys/argument_parser.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/csys/item.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/csys/item.inl \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/chrono \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__chrono/calendar.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__chrono/convert_to_tm.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__chrono/concepts.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__chrono/hh_mm_ss.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__chrono/day.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__chrono/file_clock.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__chrono/month.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__chrono/month_weekday.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__chrono/weekday.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__chrono/monthday.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__chrono/statically_widen.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__chrono/year.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__chrono/year_month.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__chrono/year_month_day.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__chrono/year_month_weekday.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__chrono/literals.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/forward_list \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/csys/autocomplete.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/csys/autocomplete.inl \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/csys/history.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/csys/history.inl \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/iostream \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/istream \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/bitset \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/ostream \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/format \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/container_adaptor.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/range_default_formatter.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/range_formatter.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/format_context.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/format_arg_store.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/format_args.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__ranges/ref_view.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/queue \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/stack \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/format_functions.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/formatter_char.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/write_escaped.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/escaped_output_table.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/formatter_floating_point.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__charconv/chars_format.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__charconv/to_chars_floating_point.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/formatter_integer.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/formatter_pointer.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/formatter_string.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__format/formatter_tuple.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/print \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/unistd.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/csys/script.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/csys/script.inl \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/fstream \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/filesystem \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__filesystem/copy_options.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__filesystem/directory_entry.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__filesystem/file_status.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__filesystem/file_type.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__filesystem/perms.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__filesystem/file_time_type.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__filesystem/filesystem_error.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__filesystem/path.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/iomanip \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__filesystem/operations.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__filesystem/perm_options.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__filesystem/space_info.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__filesystem/directory_iterator.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__filesystem/directory_options.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__filesystem/path_iterator.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__filesystem/recursive_directory_iterator.h \
+  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1/__filesystem/u8path.h \
+  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/imgui-console/include/csys/system.inl \
   /data/data/com.termux/files/home/frida/droneview-menu/src/frontend/droidsans_ttf.inc \
   /data/data/com.termux/files/home/frida/droneview-menu/src/frontend/icon_rgba.inc

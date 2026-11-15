@@ -1,0 +1,2 @@
+/data/data/com.termux/files/usr/bin/llvm-ar qc libimgui_console.a "CMakeFiles/imgui_console.dir/dependencies/imgui-console/src/imgui_console.cpp.o"
+/data/data/com.termux/files/usr/bin/llvm-ranlib libimgui_console.a

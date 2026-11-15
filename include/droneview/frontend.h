@@ -22,4 +22,17 @@ void reset_for_context_loss();
 bool touch_captures(float x, float y);
 void queue_touch(float x, float y, int action);
 
+// Android soft-keyboard and key-event bridge used by the console.
+bool console_input_hit(float x, float y);
+bool console_view_active();
+void request_console_input_focus();
+void request_console_input_blur();
+bool text_input_wanted();
+bool menu_active();
+void queue_menu_key(int imgui_key);
+void queue_menu_char(unsigned int codepoint);
+void queue_character(unsigned int codepoint);
+void queue_key(int imgui_key, bool down);
+void set_modifiers(bool ctrl, bool shift, bool alt);
+
 }  // namespace dv::frontend

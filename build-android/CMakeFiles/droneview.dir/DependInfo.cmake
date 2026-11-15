@@ -22,6 +22,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/data/data/com.termux/files/home/frida/droneview-menu/src/backend/jni_onload.cpp" "CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o" "gcc" "CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o.d"
   "/data/data/com.termux/files/home/frida/droneview-menu/src/backend/overlay_hook.cpp" "CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o" "gcc" "CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o.d"
   "/data/data/com.termux/files/home/frida/droneview-menu/src/backend/runtime.cpp" "CMakeFiles/droneview.dir/src/backend/runtime.cpp.o" "gcc" "CMakeFiles/droneview.dir/src/backend/runtime.cpp.o.d"
+  "/data/data/com.termux/files/home/frida/droneview-menu/src/backend/soft_keyboard.cpp" "CMakeFiles/droneview.dir/src/backend/soft_keyboard.cpp.o" "gcc" "CMakeFiles/droneview.dir/src/backend/soft_keyboard.cpp.o.d"
   "/data/data/com.termux/files/home/frida/droneview-menu/src/frontend/menu.cpp" "CMakeFiles/droneview.dir/src/frontend/menu.cpp.o" "gcc" "CMakeFiles/droneview.dir/src/frontend/menu.cpp.o.d"
   "" "libcstatic.so" "gcc" "CMakeFiles/droneview.dir/link.d"
   )

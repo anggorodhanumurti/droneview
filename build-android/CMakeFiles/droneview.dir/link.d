@@ -13,10 +13,12 @@ libcstatic.so: \
  CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o \
  CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o \
  CMakeFiles/droneview.dir/src/backend/runtime.cpp.o \
+ CMakeFiles/droneview.dir/src/backend/soft_keyboard.cpp.o \
  CMakeFiles/droneview.dir/src/backend/entry.cpp.o \
  CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o \
  CMakeFiles/droneview.dir/src/frontend/menu.cpp.o \
  libimgui.a \
+ libimgui_console.a \
  /data/data/com.termux/files/home/frida/droneview-menu/dependencies/glosshook/lib/ARM64/libGlossHook.a \
  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_static.a \
  /data/data/com.termux/files/home/android-ndk-r28c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++abi.a \
@@ -58,6 +60,8 @@ CMakeFiles/droneview.dir/src/backend/input_hook.cpp.o:
 
 CMakeFiles/droneview.dir/src/backend/runtime.cpp.o:
 
+CMakeFiles/droneview.dir/src/backend/soft_keyboard.cpp.o:
+
 CMakeFiles/droneview.dir/src/backend/entry.cpp.o:
 
 CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o:
@@ -65,6 +69,8 @@ CMakeFiles/droneview.dir/src/backend/jni_onload.cpp.o:
 CMakeFiles/droneview.dir/src/frontend/menu.cpp.o:
 
 libimgui.a:
+
+libimgui_console.a:
 
 /data/data/com.termux/files/home/frida/droneview-menu/dependencies/glosshook/lib/ARM64/libGlossHook.a:
 

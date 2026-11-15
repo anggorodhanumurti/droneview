@@ -28,6 +28,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/droneview.dir/src/backend/overlay_hook.cpp.o.d"
   "CMakeFiles/droneview.dir/src/backend/runtime.cpp.o"
   "CMakeFiles/droneview.dir/src/backend/runtime.cpp.o.d"
+  "CMakeFiles/droneview.dir/src/backend/soft_keyboard.cpp.o"
+  "CMakeFiles/droneview.dir/src/backend/soft_keyboard.cpp.o.d"
   "CMakeFiles/droneview.dir/src/frontend/menu.cpp.o"
   "CMakeFiles/droneview.dir/src/frontend/menu.cpp.o.d"
   "libcstatic.pdb"

@@ -130,6 +130,19 @@ imgui/fast:
 .PHONY : imgui/fast
 
 #=============================================================================
+# Target rules for targets named imgui_console
+
+# Build rule for target.
+imgui_console: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 imgui_console
+.PHONY : imgui_console
+
+# fast build rule for target.
+imgui_console/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/imgui_console.dir/build.make CMakeFiles/imgui_console.dir/build
+.PHONY : imgui_console/fast
+
+#=============================================================================
 # Target rules for targets named droneview
 
 # Build rule for target.
@@ -141,6 +154,30 @@ droneview: cmake_check_build_system
 droneview/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/droneview.dir/build.make CMakeFiles/droneview.dir/build
 .PHONY : droneview/fast
+
+dependencies/imgui-console/src/imgui_console.o: dependencies/imgui-console/src/imgui_console.cpp.o
+.PHONY : dependencies/imgui-console/src/imgui_console.o
+
+# target to build an object file
+dependencies/imgui-console/src/imgui_console.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/imgui_console.dir/build.make CMakeFiles/imgui_console.dir/dependencies/imgui-console/src/imgui_console.cpp.o
+.PHONY : dependencies/imgui-console/src/imgui_console.cpp.o
+
+dependencies/imgui-console/src/imgui_console.i: dependencies/imgui-console/src/imgui_console.cpp.i
+.PHONY : dependencies/imgui-console/src/imgui_console.i
+
+# target to preprocess a source file
+dependencies/imgui-console/src/imgui_console.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/imgui_console.dir/build.make CMakeFiles/imgui_console.dir/dependencies/imgui-console/src/imgui_console.cpp.i
+.PHONY : dependencies/imgui-console/src/imgui_console.cpp.i
+
+dependencies/imgui-console/src/imgui_console.s: dependencies/imgui-console/src/imgui_console.cpp.s
+.PHONY : dependencies/imgui-console/src/imgui_console.s
+
+# target to generate assembly for a file
+dependencies/imgui-console/src/imgui_console.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/imgui_console.dir/build.make CMakeFiles/imgui_console.dir/dependencies/imgui-console/src/imgui_console.cpp.s
+.PHONY : dependencies/imgui-console/src/imgui_console.cpp.s
 
 dependencies/imgui/backends/imgui_impl_opengl3.o: dependencies/imgui/backends/imgui_impl_opengl3.cpp.o
 .PHONY : dependencies/imgui/backends/imgui_impl_opengl3.o
@@ -598,6 +635,30 @@ src/backend/runtime.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/droneview.dir/build.make CMakeFiles/droneview.dir/src/backend/runtime.cpp.s
 .PHONY : src/backend/runtime.cpp.s
 
+src/backend/soft_keyboard.o: src/backend/soft_keyboard.cpp.o
+.PHONY : src/backend/soft_keyboard.o
+
+# target to build an object file
+src/backend/soft_keyboard.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/droneview.dir/build.make CMakeFiles/droneview.dir/src/backend/soft_keyboard.cpp.o
+.PHONY : src/backend/soft_keyboard.cpp.o
+
+src/backend/soft_keyboard.i: src/backend/soft_keyboard.cpp.i
+.PHONY : src/backend/soft_keyboard.i
+
+# target to preprocess a source file
+src/backend/soft_keyboard.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/droneview.dir/build.make CMakeFiles/droneview.dir/src/backend/soft_keyboard.cpp.i
+.PHONY : src/backend/soft_keyboard.cpp.i
+
+src/backend/soft_keyboard.s: src/backend/soft_keyboard.cpp.s
+.PHONY : src/backend/soft_keyboard.s
+
+# target to generate assembly for a file
+src/backend/soft_keyboard.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/droneview.dir/build.make CMakeFiles/droneview.dir/src/backend/soft_keyboard.cpp.s
+.PHONY : src/backend/soft_keyboard.cpp.s
+
 src/frontend/menu.o: src/frontend/menu.cpp.o
 .PHONY : src/frontend/menu.o
 
@@ -632,6 +693,10 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... droneview"
 	@echo "... imgui"
+	@echo "... imgui_console"
+	@echo "... dependencies/imgui-console/src/imgui_console.o"
+	@echo "... dependencies/imgui-console/src/imgui_console.i"
+	@echo "... dependencies/imgui-console/src/imgui_console.s"
 	@echo "... dependencies/imgui/backends/imgui_impl_opengl3.o"
 	@echo "... dependencies/imgui/backends/imgui_impl_opengl3.i"
 	@echo "... dependencies/imgui/backends/imgui_impl_opengl3.s"
@@ -689,6 +754,9 @@ help:
 	@echo "... src/backend/runtime.o"
 	@echo "... src/backend/runtime.i"
 	@echo "... src/backend/runtime.s"
+	@echo "... src/backend/soft_keyboard.o"
+	@echo "... src/backend/soft_keyboard.i"
+	@echo "... src/backend/soft_keyboard.s"
 	@echo "... src/frontend/menu.o"
 	@echo "... src/frontend/menu.i"
 	@echo "... src/frontend/menu.s"

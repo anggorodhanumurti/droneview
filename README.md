@@ -9,8 +9,8 @@ select, no extra features. One shared library, split into:
 
 - **backend** — ELF/GlossHook, IL2CPP resolution, `eglSwapBuffers` and Unity
   input hooks, Drone View camera control.
-- **frontend** — Dear ImGui 1.85 + OpenGL3 menu (Enable checkbox + FOV radio
-  presets), touch handling.
+- **frontend** — Dear ImGui 1.85 + OpenGL3 menu (Drone View toggle + FOV
+  checkboxes), touch handling.
 
 ## Layout
 
@@ -35,10 +35,13 @@ droneview-menu/
 ## Behavior
 
 - The menu appears on the first frame after the library is loaded.
-- `Enable` off → original camera FOV is restored.
-- `Enable` on → `GameMethod.ShowCamera()` (if present) and
+- `Drone View` toggle off → original camera FOV is restored.
+- `Drone View` toggle on → `GameMethod.ShowCamera()` (if present) and
   `UnityEngine.Camera.set_fieldOfView(FOV)`, clamped to `20..120`.
-- `FOV` radio presets: `Medium` = 40, `Wide` = 60, `Birdeye` = 80.
+- `FOV` checkboxes: `Medium` = 40, `Wide` = 60, `Birdeye` = 80. No preset is
+  applied until one is checked; the game's original FOV is kept until then.
+  The checkbox marks the currently applied preset for the session and resets
+  to unchecked when the process restarts.
 - Binding resolution runs on a worker thread; the render thread is never
   blocked. `liblogic.so` is the primary source, `libcsharp.so` fills missing
   symbols. The worker never `dlopen`s a library the game has not loaded.
@@ -96,7 +99,8 @@ droneview: drone enabled, original FOV ...
   `(Landroid/view/InputEvent;)Z` signature, and an executable target inside
   `libunity`. The legacy `libunity + 0x1888f60` slot is only a fallback; if
   neither resolves, input is skipped (menu still renders).
-- If the game resets FOV every frame, the frame loop re-applies it.
+- If the game resets FOV every frame, the frame loop re-applies the selected
+  preset.
 - The overlay tracks the EGL context used by ImGui. If the game recreates its
   context (for example after background/foreground), the overlay releases the
   old ImGui context and reinitializes on the new one.

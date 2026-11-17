@@ -22,7 +22,8 @@ bool initial_checks_passed();
 std::string status();
 
 // Applies or restores the drone FOV. Called from the render thread every
-// frame; cheap once bound. Safe to call before ready().
+// frame; cheap once bound. Safe to call before ready(). A non-positive fov
+// means no preset is selected and the game's field of view is left untouched.
 void apply(bool enabled, float fov);
 
 }  // namespace dv::backend

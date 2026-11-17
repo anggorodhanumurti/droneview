@@ -36,12 +36,18 @@ struct TouchEvent {
 
 std::atomic<bool> g_initialized{false};
 bool g_enabled = false;
-int g_fov_index = 0;
-constexpr float kFovPresets[] = {40.0f, 60.0f, 80.0f};
+constexpr int kFovPresetCount = 3;
+constexpr int kNoFovPreset = -1;
+int g_fov_index = kNoFovPreset;
+constexpr float kFovPresets[kFovPresetCount] = {40.0f, 60.0f, 80.0f};
 float g_ui_scale = 1.4f;
 float g_font_scale = 1.0f;
 constexpr float kFontPixelSize = 18.0f;
-constexpr float kConsoleWidth = 560.0f;
+constexpr float kFontSizeRatio = 0.028f;
+constexpr float kFontPixelMin = 22.0f;
+constexpr float kFontPixelMax = 38.0f;
+constexpr float kUiScaleBase = 13.0f;
+constexpr float kConsoleWidth = 600.0f;
 constexpr float kConsoleLogHeight = 220.0f;
 constexpr float kIconDisplaySize = 64.0f;
 constexpr float kIconDragThreshold = 4.0f;
@@ -62,6 +68,7 @@ std::unique_ptr<ImGuiConsole> g_console;
 std::string g_ini_filename = "droneview.ini";
 std::string g_log_filename = "droneview_.txt";
 ImGuiStyle g_base_style;
+bool g_display_configured = false;
 
 std::mutex g_touch_mutex;
 std::deque<TouchEvent> g_touch_events;
@@ -261,9 +268,18 @@ void destroy_icon_texture() {
     }
 }
 
+bool control_menu_fov_selected() {
+    return g_fov_index >= 0 && g_fov_index < kFovPresetCount;
+}
+
+float control_menu_fov_override() {
+    return control_menu_fov_selected() ? kFovPresets[g_fov_index] : -1.0f;
+}
+
 int control_menu_fov_value() {
-    const int index = (g_fov_index >= 0 && g_fov_index < 3) ? g_fov_index : 0;
-    return static_cast<int>(kFovPresets[index]);
+    return control_menu_fov_selected()
+               ? static_cast<int>(kFovPresets[g_fov_index])
+               : -1;
 }
 
 void minimize_overlay() {
@@ -313,13 +329,110 @@ void activate_control_menu_item(int index) {
             break;
         case 4:
             g_control_menu_status =
-                "Current FOV: " + std::to_string(control_menu_fov_value());
+                control_menu_fov_selected()
+                    ? "Current FOV: " +
+                          std::to_string(control_menu_fov_value())
+                    : "Current FOV: game default (no preset selected)";
             break;
         case 5:
             g_control_menu_active.store(false, std::memory_order_relaxed);
             break;
         default:
             break;
+    }
+}
+
+enum class MenuIndicator { None, Checkbox, Toggle };
+
+void draw_control_menu_row(int index, const char* text, bool selected,
+                           MenuIndicator indicator, bool on) {
+    const float row_height = ImGui::GetTextLineHeight();
+    const float font_size = ImGui::GetFontSize();
+    const ImVec4 accent(0.62f, 0.48f, 1.0f, 1.0f);
+    const ImVec4 selected_text(240.0f / 255.0f, 248.0f / 255.0f,
+                               255.0f / 255.0f, 1.0f);
+
+    // Reserve a marker column on the left; the checkbox/toggle is drawn at the
+    // right edge of the row.
+    const float marker_width = font_size * 0.9f;
+    const float space_width = std::max(1.0f, ImGui::CalcTextSize(" ").x);
+    const int spaces = std::max(
+        1, static_cast<int>(std::lround(marker_width / space_width)));
+    const std::string prefix(static_cast<std::size_t>(spaces), ' ');
+
+    char label[192];
+    std::snprintf(label, sizeof(label), "%s%s###drone_control_%d",
+                  prefix.c_str(), text, index);
+
+    const ImVec2 text_pos = ImGui::GetCursorScreenPos();
+    const float row_right =
+        text_pos.x + ImGui::GetContentRegionAvail().x -
+        ImGui::GetStyle().FramePadding.x;
+    if (selected) {
+        ImGui::PushStyleColor(ImGuiCol_Text, selected_text);
+    }
+    const bool clicked =
+        ImGui::Selectable(label, selected, ImGuiSelectableFlags_None,
+                          ImVec2(0.0f, row_height));
+    if (selected) {
+        ImGui::PopStyleColor();
+    }
+
+    const float center_y = text_pos.y + row_height * 0.5f;
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+    const ImU32 accent_col = ImGui::GetColorU32(accent);
+    const ImU32 indicator_on_col = ImGui::GetColorU32(ImGuiCol_NavHighlight);
+    const ImU32 muted_col =
+        ImGui::GetColorU32(ImVec4(0.55f, 0.55f, 0.55f, 1.0f));
+
+    if (selected) {
+        const float marker_h = font_size * 0.55f;
+        const float marker_w = font_size * 0.35f;
+        draw->AddTriangleFilled(
+            ImVec2(text_pos.x, center_y - marker_h * 0.5f),
+            ImVec2(text_pos.x, center_y + marker_h * 0.5f),
+            ImVec2(text_pos.x + marker_w, center_y), accent_col);
+    }
+
+    if (indicator == MenuIndicator::Checkbox) {
+        const float box = std::round(font_size * 0.8f);
+        const ImVec2 box_min(row_right - box,
+                             std::round(center_y - box * 0.5f));
+        const ImVec2 box_max(box_min.x + box, box_min.y + box);
+        const float border = std::max(1.5f, font_size * 0.09f);
+        draw->AddRect(box_min, box_max, on ? indicator_on_col : muted_col, 2.0f,
+                      0, border);
+        if (on) {
+            const float thickness = std::max(2.0f, font_size * 0.13f);
+            draw->AddLine(
+                ImVec2(box_min.x + box * 0.22f, box_min.y + box * 0.52f),
+                ImVec2(box_min.x + box * 0.44f, box_min.y + box * 0.76f),
+                indicator_on_col, thickness);
+            draw->AddLine(
+                ImVec2(box_min.x + box * 0.44f, box_min.y + box * 0.76f),
+                ImVec2(box_min.x + box * 0.80f, box_min.y + box * 0.24f),
+                indicator_on_col, thickness);
+        }
+    } else if (indicator == MenuIndicator::Toggle) {
+        const float track_h = std::round(font_size * 0.9f);
+        const float track_w = std::round(track_h * 2.0f);
+        const ImVec2 track_min(row_right - track_w,
+                               std::round(center_y - track_h * 0.5f));
+        const ImVec2 track_max(track_min.x + track_w, track_min.y + track_h);
+        draw->AddRectFilled(track_min, track_max,
+                            on ? indicator_on_col
+                               : ImGui::GetColorU32(ImGuiCol_FrameBg),
+                            track_h * 0.5f);
+        const float knob_radius = track_h * 0.5f - 2.0f;
+        const float knob_x = on ? track_max.x - track_h * 0.5f
+                                : track_min.x + track_h * 0.5f;
+        draw->AddCircleFilled(ImVec2(knob_x, center_y), knob_radius,
+                              ImGui::GetColorU32(ImGuiCol_Text));
+    }
+
+    if (clicked) {
+        g_control_menu_index = index;
+        activate_control_menu_item(index);
     }
 }
 
@@ -414,7 +527,7 @@ void draw_control_menu() {
     ImGui::Separator();
 
     static const char* const kLabels[] = {
-        "1. Toggle Drone View",
+        "1. Drone View",
         "2. FOV: Medium (40)",
         "3. FOV: Wide (60)",
         "4. FOV: Birdeye (80)",
@@ -424,25 +537,34 @@ void draw_control_menu() {
 
     for (int i = 0; i < 6; ++i) {
         const bool selected = i == g_control_menu_index;
-        char label[160];
-        std::snprintf(label, sizeof(label), "%s %s###drone_control_%d",
-                      selected ? ">" : " ", kLabels[i], i);
-        if (selected) {
-            ImGui::PushStyleColor(ImGuiCol_Text, accent);
+        char row_text[160];
+        if (i == 0) {
+            std::snprintf(row_text, sizeof(row_text), "%s: %s", kLabels[i],
+                          g_enabled ? "ON" : "OFF");
+        } else {
+            std::snprintf(row_text, sizeof(row_text), "%s", kLabels[i]);
         }
-        const bool clicked = ImGui::Selectable(label, selected);
-        if (selected) {
-            ImGui::PopStyleColor();
-        }
-        if (clicked) {
-            g_control_menu_index = i;
-            activate_control_menu_item(i);
+        if (i == 0) {
+            draw_control_menu_row(i, row_text, selected, MenuIndicator::Toggle,
+                                  g_enabled);
+        } else if (i >= 1 && i <= kFovPresetCount) {
+            draw_control_menu_row(i, row_text, selected,
+                                  MenuIndicator::Checkbox,
+                                  g_fov_index == i - 1);
+        } else {
+            draw_control_menu_row(i, row_text, selected, MenuIndicator::None,
+                                  false);
         }
     }
 
     ImGui::Separator();
-    ImGui::Text("Status: Drone View %s | FOV %d",
-                g_enabled ? "ON" : "OFF", control_menu_fov_value());
+    if (control_menu_fov_selected()) {
+        ImGui::Text("Status: Drone View %s | FOV %d",
+                    g_enabled ? "ON" : "OFF", control_menu_fov_value());
+    } else {
+        ImGui::Text("Status: Drone View %s | FOV game default",
+                    g_enabled ? "ON" : "OFF");
+    }
     if (!g_control_menu_status.empty()) {
         ImGui::TextWrapped("%s", g_control_menu_status.c_str());
     }
@@ -637,6 +759,68 @@ void draw_menu() {
     ImGui::End();
 }
 
+bool rebuild_font_at(float pixel_size) {
+    ImGuiIO& io = ImGui::GetIO();
+    const bool had_texture = io.Fonts->TexID != 0;
+
+    ImGui_ImplOpenGL3_DestroyFontsTexture();
+    io.Fonts->Clear();
+
+    ImFontConfig font_config;
+    font_config.FontDataOwnedByAtlas = false;
+    font_config.OversampleH = 2;
+    font_config.OversampleV = 2;
+    font_config.PixelSnapH = true;
+    ImFont* font = io.Fonts->AddFontFromMemoryTTF(
+        const_cast<unsigned char*>(kDroidSansTtf),
+        static_cast<int>(kDroidSansTtf_len), pixel_size, &font_config,
+        io.Fonts->GetGlyphRangesDefault());
+    if (font != nullptr) {
+        io.FontDefault = font;
+        g_font_scale = 1.0f;
+    } else {
+        io.Fonts->AddFontDefault();
+        io.FontDefault = nullptr;
+        g_font_scale = g_ui_scale;
+    }
+    io.FontGlobalScale = g_font_scale;
+
+    if (!io.Fonts->Build()) {
+        io.Fonts->Clear();
+        io.Fonts->AddFontDefault();
+        io.FontDefault = nullptr;
+        g_font_scale = g_ui_scale;
+        io.FontGlobalScale = g_font_scale;
+        if (!io.Fonts->Build()) {
+            return false;
+        }
+    }
+    // When device objects already exist the font texture must be recreated
+    // now; before the first frame the backend builds it from the new atlas.
+    if (had_texture) {
+        ImGui_ImplOpenGL3_CreateFontsTexture();
+    }
+    return true;
+}
+
+void configure_ui_for_display(int width, int height) {
+    const float min_dim = static_cast<float>(std::min(width, height));
+    float pixel_size = std::round(min_dim * kFontSizeRatio);
+    pixel_size = std::max(kFontPixelMin, std::min(pixel_size, kFontPixelMax));
+    g_ui_scale = pixel_size / kUiScaleBase;
+    g_display_configured = true;
+    if (rebuild_font_at(pixel_size)) {
+        app::platform::log_info(
+            "droneview",
+            "UI font: DroidSans @ %.0fpx, scale %.2f (display %dx%d)",
+            pixel_size, g_ui_scale, width, height);
+    } else {
+        app::platform::log_error(
+            "droneview", "UI font rebuild failed for display %dx%d", width,
+            height);
+    }
+}
+
 }  // namespace
 
 bool initialize(const char* ini_filename, const char* log_filename) {
@@ -649,6 +833,12 @@ bool initialize(const char* ini_filename, const char* log_filename) {
     if (log_filename != nullptr && *log_filename != '\0') {
         g_log_filename = log_filename;
     }
+
+    // Start from the fixed fallback; the first real surface size replaces it
+    // with a display-derived, crisply rasterized font.
+    g_ui_scale = 1.4f;
+    g_font_scale = 1.0f;
+    g_display_configured = false;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -686,6 +876,10 @@ bool initialize(const char* ini_filename, const char* log_filename) {
 
     ImGui::StyleColorsDark();
     g_base_style = ImGui::GetStyle();
+    // Near-opaque, slightly darker backdrop so log text stays legible over
+    // bright game content.
+    g_base_style.Colors[ImGuiCol_WindowBg] =
+        ImVec4(0.05f, 0.05f, 0.06f, 0.98f);
     ImGui::GetStyle().ScaleAllSizes(g_ui_scale);
 
     ImFontConfig font_config;
@@ -723,7 +917,7 @@ bool initialize(const char* ini_filename, const char* log_filename) {
     create_icon_texture();
 
     g_console = std::make_unique<ImGuiConsole>("Drone Console", 256);
-    g_console->SetInputHint("CHOOSE MENU NUMBER HERE");
+    g_console->SetInputHint("ENTER MENU NUMBER HERE");
     g_console->SetLineHandler(handle_control_menu_line);
     g_console->System().RegisterCommand(
         "status", "Show the drone view backend status", []() {
@@ -784,6 +978,9 @@ void set_display_size(int width, int height) {
     if (width > 0 && height > 0) {
         ImGui::GetIO().DisplaySize =
             ImVec2(static_cast<float>(width), static_cast<float>(height));
+        if (!g_display_configured) {
+            configure_ui_for_display(width, height);
+        }
     }
 }
 
@@ -809,8 +1006,9 @@ void frame() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     // Apply the UI state after rendering so the menu stays responsive even if
-    // the game is still resolving IL2CPP bindings.
-    dv::backend::apply(g_enabled, kFovPresets[g_fov_index]);
+    // the game is still resolving IL2CPP bindings. A non-positive FOV means no
+    // preset is selected, so the game keeps its original field of view.
+    dv::backend::apply(g_enabled, control_menu_fov_override());
 }
 
 void shutdown() {
@@ -851,6 +1049,7 @@ void shutdown() {
     }
     g_console_focus_request.store(false, std::memory_order_relaxed);
     g_console_blur_request.store(false, std::memory_order_relaxed);
+    g_display_configured = false;
 }
 
 void reset_for_context_loss() {
@@ -892,6 +1091,7 @@ void reset_for_context_loss() {
     }
     g_console_focus_request.store(false, std::memory_order_relaxed);
     g_console_blur_request.store(false, std::memory_order_relaxed);
+    g_display_configured = false;
 }
 
 bool touch_captures(float x, float y) {

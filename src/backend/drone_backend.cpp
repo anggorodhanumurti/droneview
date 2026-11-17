@@ -429,6 +429,12 @@ void apply(bool enabled, float fov) {
             static_cast<unsigned long long>(app::platform::thread_id()));
     }
 
+    // A non-positive FOV means the user has not picked a preset yet. Leave the
+    // game's own field of view untouched instead of forcing a default.
+    if (fov <= 0.0f) {
+        return;
+    }
+
     const float applied_fov = std::max(20.0f, std::min(120.0f, fov));
     set_fov(camera, applied_fov);
     if (!g_logged_enabled) {

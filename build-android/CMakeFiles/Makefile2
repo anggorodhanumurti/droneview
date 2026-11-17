@@ -152,8 +152,8 @@ CMakeFiles/imgui_console.dir/clean:
 # Target rules for target CMakeFiles/droneview.dir
 
 # All Build rule for target.
-CMakeFiles/droneview.dir/all: CMakeFiles/imgui_console.dir/all
 CMakeFiles/droneview.dir/all: CMakeFiles/imgui.dir/all
+CMakeFiles/droneview.dir/all: CMakeFiles/imgui_console.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/droneview.dir/build.make CMakeFiles/droneview.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/droneview.dir/build.make CMakeFiles/droneview.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/data/data/com.termux/files/home/frida/droneview-menu/build-android/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17 "Built target droneview"

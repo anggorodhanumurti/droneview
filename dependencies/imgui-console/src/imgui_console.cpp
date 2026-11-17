@@ -186,11 +186,11 @@ void ImGuiConsole::DefaultSettings()
     // Style
     m_WindowAlpha = 1;
     m_ColorPalette[COL_COMMAND] = ImVec4(1.f, 1.f, 1.f, 1.f);
-    m_ColorPalette[COL_LOG] = ImVec4(1.f, 1.f, 1.f, 0.5f);
+    m_ColorPalette[COL_LOG] = ImVec4(1.f, 1.f, 1.f, 0.8f);
     m_ColorPalette[COL_WARNING] = ImVec4(1.0f, 0.87f, 0.37f, 1.f);
     m_ColorPalette[COL_ERROR] = ImVec4(1.f, 0.365f, 0.365f, 1.f);
     m_ColorPalette[COL_INFO] = ImVec4(0.46f, 0.96f, 0.46f, 1.f);
-    m_ColorPalette[COL_TIMESTAMP] = ImVec4(1.f, 1.f, 1.f, 0.5f);
+    m_ColorPalette[COL_TIMESTAMP] = ImVec4(1.f, 1.f, 1.f, 0.7f);
 }
 
 void ImGuiConsole::RegisterConsoleCommands()

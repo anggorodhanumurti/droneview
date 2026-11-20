@@ -342,18 +342,17 @@ void activate_control_menu_item(int index) {
     }
 }
 
-enum class MenuIndicator { None, Checkbox, Toggle };
+enum class MenuIndicator { None, Radio, Toggle };
 
 void draw_control_menu_row(int index, const char* text, bool selected,
                            MenuIndicator indicator, bool on) {
     const float row_height = ImGui::GetTextLineHeight();
     const float font_size = ImGui::GetFontSize();
-    const ImVec4 accent(0.62f, 0.48f, 1.0f, 1.0f);
     const ImVec4 selected_text(240.0f / 255.0f, 248.0f / 255.0f,
                                255.0f / 255.0f, 1.0f);
 
-    // Reserve a marker column on the left; the checkbox/toggle is drawn at the
-    // right edge of the row.
+    // Reserve a small left gutter for consistent row padding; the
+    // checkbox/toggle is drawn at the right edge of the row.
     const float marker_width = font_size * 0.9f;
     const float space_width = std::max(1.0f, ImGui::CalcTextSize(" ").x);
     const int spaces = std::max(
@@ -380,38 +379,18 @@ void draw_control_menu_row(int index, const char* text, bool selected,
 
     const float center_y = text_pos.y + row_height * 0.5f;
     ImDrawList* draw = ImGui::GetWindowDrawList();
-    const ImU32 accent_col = ImGui::GetColorU32(accent);
     const ImU32 indicator_on_col = ImGui::GetColorU32(ImGuiCol_NavHighlight);
     const ImU32 muted_col =
         ImGui::GetColorU32(ImVec4(0.55f, 0.55f, 0.55f, 1.0f));
 
-    if (selected) {
-        const float marker_h = font_size * 0.55f;
-        const float marker_w = font_size * 0.35f;
-        draw->AddTriangleFilled(
-            ImVec2(text_pos.x, center_y - marker_h * 0.5f),
-            ImVec2(text_pos.x, center_y + marker_h * 0.5f),
-            ImVec2(text_pos.x + marker_w, center_y), accent_col);
-    }
-
-    if (indicator == MenuIndicator::Checkbox) {
-        const float box = std::round(font_size * 0.8f);
-        const ImVec2 box_min(row_right - box,
-                             std::round(center_y - box * 0.5f));
-        const ImVec2 box_max(box_min.x + box, box_min.y + box);
+    if (indicator == MenuIndicator::Radio) {
+        const float radius = std::round(font_size * 0.4f);
+        const ImVec2 center(row_right - radius, center_y);
         const float border = std::max(1.5f, font_size * 0.09f);
-        draw->AddRect(box_min, box_max, on ? indicator_on_col : muted_col, 2.0f,
-                      0, border);
+        draw->AddCircle(center, radius, on ? indicator_on_col : muted_col, 0,
+                        border);
         if (on) {
-            const float thickness = std::max(2.0f, font_size * 0.13f);
-            draw->AddLine(
-                ImVec2(box_min.x + box * 0.22f, box_min.y + box * 0.52f),
-                ImVec2(box_min.x + box * 0.44f, box_min.y + box * 0.76f),
-                indicator_on_col, thickness);
-            draw->AddLine(
-                ImVec2(box_min.x + box * 0.44f, box_min.y + box * 0.76f),
-                ImVec2(box_min.x + box * 0.80f, box_min.y + box * 0.24f),
-                indicator_on_col, thickness);
+            draw->AddCircleFilled(center, radius * 0.5f, indicator_on_col);
         }
     } else if (indicator == MenuIndicator::Toggle) {
         const float track_h = std::round(font_size * 0.9f);
@@ -521,6 +500,7 @@ bool handle_control_menu_line(const std::string& line) {
 void draw_control_menu() {
     const ImVec4 accent(0.62f, 0.48f, 1.0f, 1.0f);
     const ImVec4 dim(0.62f, 0.62f, 0.62f, 1.0f);
+    const ImVec4 medium_gray(0.70f, 0.70f, 0.70f, 1.0f);
 
     ImGui::TextColored(accent, "Drone View Control");
     ImGui::TextDisabled("Numbered menu - keyboard or tap");
@@ -528,9 +508,9 @@ void draw_control_menu() {
 
     static const char* const kLabels[] = {
         "1. Drone View",
-        "2. FOV: Medium (40)",
-        "3. FOV: Wide (60)",
-        "4. FOV: Birdeye (80)",
+        "2. FOV: Medium",
+        "3. FOV: Wide",
+        "4. FOV: Birdeye",
         "5. Show Backend Status",
         "0. Exit Menu",
     };
@@ -539,7 +519,7 @@ void draw_control_menu() {
         const bool selected = i == g_control_menu_index;
         char row_text[160];
         if (i == 0) {
-            std::snprintf(row_text, sizeof(row_text), "%s: %s", kLabels[i],
+            std::snprintf(row_text, sizeof(row_text), "%s %s", kLabels[i],
                           g_enabled ? "ON" : "OFF");
         } else {
             std::snprintf(row_text, sizeof(row_text), "%s", kLabels[i]);
@@ -549,7 +529,7 @@ void draw_control_menu() {
                                   g_enabled);
         } else if (i >= 1 && i <= kFovPresetCount) {
             draw_control_menu_row(i, row_text, selected,
-                                  MenuIndicator::Checkbox,
+                                  MenuIndicator::Radio,
                                   g_fov_index == i - 1);
         } else {
             draw_control_menu_row(i, row_text, selected, MenuIndicator::None,
@@ -559,11 +539,12 @@ void draw_control_menu() {
 
     ImGui::Separator();
     if (control_menu_fov_selected()) {
-        ImGui::Text("Status: Drone View %s | FOV %d",
-                    g_enabled ? "ON" : "OFF", control_menu_fov_value());
+        ImGui::TextColored(medium_gray, "Status: Drone View %s | FOV %d",
+                           g_enabled ? "ON" : "OFF",
+                           control_menu_fov_value());
     } else {
-        ImGui::Text("Status: Drone View %s | FOV game default",
-                    g_enabled ? "ON" : "OFF");
+        ImGui::TextColored(medium_gray, "Status: Drone View %s | FOV game default",
+                           g_enabled ? "ON" : "OFF");
     }
     if (!g_control_menu_status.empty()) {
         ImGui::TextWrapped("%s", g_control_menu_status.c_str());
